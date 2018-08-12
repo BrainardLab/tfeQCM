@@ -20,10 +20,11 @@ params.crfAmp = 1;
 params.crfSemi = 1;
 params.crfExponent = 2;
 params.offset = 0; 
-% Exponential falloff
+
+% Exponential falloff (not used?)
 params.expFalloff = 0.3;
 
-% Noise level (used for simulations
+% Noise level (used for simulations)
 params.noiseSd = 0.2;
 
 %% Lower bounds
@@ -34,6 +35,7 @@ paramsLb.crfExponent = 1e-2;
 paramsLb.expFalloff = 1e-1;
 paramsLb.noiseLevel = 0;
 paramsLb.offset = -2;
+
 %% Upper bounds
 paramsUb.Qvec = [1e3 1e3 2*pi 2*pi 2*pi];
 paramsUb.crfAmp = 1e3;
