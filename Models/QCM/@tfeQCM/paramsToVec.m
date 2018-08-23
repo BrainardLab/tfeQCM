@@ -24,6 +24,7 @@ x(7) = params.crfExponent;
 x(8) = params.crfSemi;
 x(9) = params.expFalloff;
 x(10) = params.offset;
+
 % Optional inclusion of noise
 if (p.Results.UseNoiseParam)
     x(11) = params.noiseSd;

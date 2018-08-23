@@ -12,6 +12,8 @@ classdef tfeQCM < tfe
 
     % Public, read-only properties.
     properties (SetAccess = private, GetAccess = public)
+        % Specify dimension of ellipsoid.  Can be 2 or 3.
+        dimension = 3;
     end
     
     % Private properties. Only methods of the parent class can set these
@@ -35,6 +37,7 @@ classdef tfeQCM < tfe
             obj = obj@tfe(varargin{:});
             
             % You could do model specific stuff here.
+            obj.dimension = p.Results.dimension;
 
         end
     end 
