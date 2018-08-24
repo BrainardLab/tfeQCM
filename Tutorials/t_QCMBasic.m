@@ -1,18 +1,12 @@
-function validationData = t_QCMBasic(varargin)
-% validationData = t_QCMBasic(varargin)
-%
 % Demonstrate some basic functionalty for the quadratic color model.
-%
-% Optional key/value pairs
-%  'generatePlots' - true/fale (default true).  Make plots?
 
-%% Parse vargin for options passed here
-p = inputParser;
-p.addParameter('generatePlots',true,@islogical);
-p.parse(varargin{:});
+
+%% Set parameters
+theDimension = 2;
+generatePlots = true;
 
 %% Construct the model object
-tfe = tfeQCM('verbosity','none');
+tfe = tfeQCM('verbosity','none','dimension',theDimension);
 
 %% Set parameters
 %
@@ -35,8 +29,8 @@ totalTime = 1000;
 stimulusStruct.timebase = 0:deltaT:totalTime;
 nTimeSamples = size(stimulusStruct.timebase,2);
 filter = fspecial('gaussian',[1 nTimeSamples],6);
-stimulusStruct.values = rand(3,nTimeSamples);
-for i = 1:3
+stimulusStruct.values = rand(theDimension,nTimeSamples);
+for i = 1:theDimension
     stimulusStruct.values(i,:) = ifft(fft(stimulusStruct.values(i,:)) .* fft(filter)); 
 end
 
@@ -46,11 +40,11 @@ params1.crfAmp = 2;
 params1.crfSemi = 0.5;
 params1.crfExponent = 3;
 params1.noiseSd = 0.02;
-params1.offset = .5;
+params1.offset = 0.5;
 fprintf('Simulated model parameters:\n');
 tfe.paramPrint(params1);
 modelResponseStruct = tfe.computeResponse(params1,stimulusStruct,[],'AddNoise',true);
-if (p.Results.generatePlots)
+if (generatePlots)
     tfe.plot(modelResponseStruct);
 end
 
@@ -64,16 +58,8 @@ thePacket.metaData = [];
 [paramsFit,fVal,fitResponseStruct] = tfe.fitResponse(thePacket);
 fprintf('Model parameter from fits:\n');
 tfe.paramPrint(paramsFit);
-if (p.Results.generatePlots)
+if (generatePlots)
     tfe.plot(fitResponseStruct,'Color',[0 1 0],'NewWindow',false);
 end
 
-%% Set returned validationData structure
-if (nargout > 0)
-    validationData.params1 = params1;
-    validationData.modelResponseStruct = modelResponseStruct;
-    validationData.thePacket = thePacket;
-end
-
-end
 

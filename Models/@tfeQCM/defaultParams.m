@@ -7,15 +7,28 @@ function [params,paramsLb,paramsUb] = defaultParams(obj,varargin)
 % All three returns are in struct form, use paramsToVec on the structs to
 % get vector form.
 
-%% Default parameters
-% Quadratic parameters
+%% Default parameters for Q
 %
-% We only store 5 because we handle the amplitude of the response
-% in the amplitude parameter below.  The first axis of the ellipse
-% has an implicit value of 1.
-params.Qvec = [1 1 1 0 0];
+% This is dimension specific
+switch obj.dimension
+    case 3
+        % Quadratic parameters
+        %
+        % We only store 5 because we handle the amplitude of the response
+        % in the amplitude parameter below.  The first axis of the ellipse
+        % has an implicit value of 1.
+        params.Qvec = [1 1 0 0 0];
+        paramsLb.Qvec = [1e-3 1e-3 -360 -360 -360];
+        paramsUb.Qvec = [1e3 1e3 360 360 360];
 
-% Let's have a Naka-Rushton sigmoidal contrast response function
+        
+    case 2
+        params.Qvec = [1 0 ];
+        paramsLb.Qvec = [1e-3 -360];
+        paramsUb.Qvec = [1e3 360];
+end
+
+%% The Naka-Rushton
 params.crfAmp = 1;
 params.crfSemi = 1;
 params.crfExponent = 2;
@@ -28,7 +41,6 @@ params.expFalloff = 0.3;
 params.noiseSd = 0.2;
 
 %% Lower bounds
-paramsLb.Qvec = [1e-3 1e-3 0 0 0];
 paramsLb.crfAmp = 1e-3;
 paramsLb.crfSemi = 1e-3;
 paramsLb.crfExponent = 1e-2;
@@ -37,7 +49,6 @@ paramsLb.noiseLevel = 0;
 paramsLb.offset = -2;
 
 %% Upper bounds
-paramsUb.Qvec = [1e3 1e3 2*pi 2*pi 2*pi];
 paramsUb.crfAmp = 1e3;
 paramsUb.crfSemi = 1e3 ;
 paramsUb.crfExponent = 1e2;

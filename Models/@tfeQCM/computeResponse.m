@@ -21,7 +21,7 @@ p.parse(params,stimulusStruct,kernelStruct,varargin{:});
 params = p.Results.params;
 
 %% Get the ellipsoid parameters in cannonical form
-[~,~,Q] = EllipsoidMatricesGenerate([1 params.Qvec]');
+[~,~,Q] = EllipsoidMatricesGenerate([1 params.Qvec]','dimension',obj.dimension);
 
 %% Find the length of the points after application of the quadratic
 %

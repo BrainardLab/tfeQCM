@@ -23,20 +23,23 @@ switch obj.dimension
         params.crfSemi = x(8);
         params.expFalloff = x(9);
         params.offset = x(10);
+        
         % Optional inclusion of noise
         if (p.Results.UseNoiseParam)
             params.noiseSd = x(11);
         end
+        
     case 2
-        params.Qvec(1:3) = x(1:3)';
-        params.crfAmp = x(4);
-        params.crfExponent = x(5);
-        params.crfSemi = x(6);
-        params.expFalloff = x(7);
-        params.offset = x(8);
+        params.Qvec(1:2) = x(1:2)';
+        params.crfAmp = x(3);
+        params.crfExponent = x(4);
+        params.crfSemi = x(5);
+        params.expFalloff = x(6);
+        params.offset = x(7);
+        
         % Optional inclusion of noise
         if (p.Results.UseNoiseParam)
-            params.noiseSd = x(9);
+            params.noiseSd = x(8);
         end
 end
         
