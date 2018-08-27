@@ -18,14 +18,14 @@ switch obj.dimension
         % in the amplitude parameter below.  The first axis of the ellipse
         % has an implicit value of 1.
         params.Qvec = [1 1 0 0 0];
-        paramsLb.Qvec = [1e-3 1e-3 -360 -360 -360];
-        paramsUb.Qvec = [1e3 1e3 360 360 360];
+        paramsLb.Qvec = [1e-2 1e-2 -360 -360 -360];
+        paramsUb.Qvec = [1e2 1e2 360 360 360];
 
         
     case 2
         params.Qvec = [1 0 ];
-        paramsLb.Qvec = [1e-3 -360];
-        paramsUb.Qvec = [1e3 360];
+        paramsLb.Qvec = [1e-2 -360];
+        paramsUb.Qvec = [1e2 360];
 end
 
 %% The Naka-Rushton
@@ -41,17 +41,17 @@ params.expFalloff = 0.3;
 params.noiseSd = 0.2;
 
 %% Lower bounds
-paramsLb.crfAmp = 1e-3;
-paramsLb.crfSemi = 1e-3;
+paramsLb.crfAmp = 1e-1;
+paramsLb.crfSemi = 1e-2;
 paramsLb.crfExponent = 1e-2;
 paramsLb.expFalloff = 1e-1;
 paramsLb.noiseLevel = 0;
 paramsLb.offset = -2;
 
 %% Upper bounds
-paramsUb.crfAmp = 1e3;
-paramsUb.crfSemi = 1e3 ;
-paramsUb.crfExponent = 1e2;
+paramsUb.crfAmp = 1e1;
+paramsUb.crfSemi = 1e2 ;
+paramsUb.crfExponent = 10;
 paramsUb.expFalloff = 1e1;
 paramsUb.noiseLevel = 100;
 paramsUb.offset = 2; 
