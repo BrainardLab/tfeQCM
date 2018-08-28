@@ -68,6 +68,16 @@ classdef tfeQCM < tfe
             end
 
         end
+        
+        % Override tfe fitError so we can scale appropriately for this
+        % problem.  This makes a difference to fmincon's behavior, but
+        % I did not want to change the tfe function itself. 
+        function [fVal,modelResponseStruct] = fitError(obj,paramsVec,thePacket,varargin)
+
+            [fVal,modelResponseStruct] = fitError@tfe(obj,paramsVec,thePacket,varargin{:});
+            fVal= 1000*fVal;
+        end
+
     end 
     
     % Get methods for dependent properties
