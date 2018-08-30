@@ -1,6 +1,9 @@
 % Show how we can use functions available with the QCM to fit contrast-resp functions.
 %
 % Description:
+%    The QCM model will fit the model to time series.  But we can coopt the
+%    underlying code to fit contrast response functions.  This tutorial
+%    illustrates that usage.
 
 % History:
 %  08/28/18  dhb  Wrote it.
