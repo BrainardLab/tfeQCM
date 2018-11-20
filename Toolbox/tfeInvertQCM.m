@@ -1,7 +1,8 @@
-function [contrast,stimulus] = tfeInvertQCM(params,direction,response)
+function [contrast,stimulus] = tfeQCMInvert(params,direction,response)
 % Invert QCM model for a particular direction
 %
 % Synopsis
+%    [contrast,stimulus] = tfeQCMInvert(params,direction,response)
 %
 % Description:
 %    Take a unit vector specifying a direction in stimulus space, the
