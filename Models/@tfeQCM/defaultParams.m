@@ -6,12 +6,27 @@ function [params,paramsLb,paramsUb] = defaultParams(obj,varargin)
 %
 % All three returns are in struct form, use paramsToVec on the structs to
 % get vector form.
+%
+% Optional key/value pairs
+%    'defaultParams'     - (struct, default empty). If not empty, take the
+%                          passed structure as defining the default
+%                          parameters.
+%    'defaultParamsInfo  - (struct, default empty). Can be passed by the
+%                          fitResponse routine of tfe. We understand the
+%                          following fields.
+%                            'noOffset' (logical) If true, force offset
+%                             to zero.  Otherwise fit the offset.
+
+% History:
+%   11/20/18  dhb, mab     Keep minor axis smaller than major in limits,
+%                          for first two. 
 
 %% COMMENT DEFAULT PARAMS KEY/VALUE PAIR AS WELL NEW CODE.
 
 % Parse vargin for options passed here
 p = inputParser; p.KeepUnmatched = true;
 p.addParameter('defaultParams',[],@(x)(isempty(x) | isstruct(x)));
+p.addParameter('defaultParamsInfo',[],@(x)(isempty(x) | isstruct(x)));
 p.parse(varargin{:});
 
 if (isempty(p.Results.defaultParams))
@@ -57,8 +72,7 @@ switch obj.dimension
         % so we bound the other axes at 1.
         paramsLb.Qvec = [1e-2 1e-2 -360 -360 -360];
         paramsUb.Qvec = [1 1 360 360 360];
-        
-        
+           
     case 2
         paramsLb.Qvec = [1e-2 -360];
         paramsUb.Qvec = [1 360];
@@ -79,4 +93,12 @@ paramsUb.crfExponent = 10;
 paramsUb.expFalloff = 1e1;
 paramsUb.noiseLevel = 100;
 paramsUb.offset = 2;
+
+%% Handle noOffset possibility
+if (~isempty(p.Results.defaultParamsInfo) & p.Results.defaultParamsInfo.noOffset)
+    params.offset = 0;
+    paramsLb.offset = 0;
+    paramsUb.offset = 0;
+end
+
 end
