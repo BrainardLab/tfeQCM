@@ -25,10 +25,10 @@ if (isempty(p.Results.defaultParams))
             % We only store 5 because we handle the amplitude of the response
             % in the amplitude parameter below.  The first axis of the ellipse
             % has an implicit value of 1.
-            params.Qvec = [1 1 0 0 0];
+            params.Qvec = [0.99 0.5 0 0 0];
             
         case 2
-            params.Qvec = [1 0 ];
+            params.Qvec = [0.99 0];
     end
     
     %% The Naka-Rushton
@@ -53,14 +53,15 @@ switch obj.dimension
         %
         % We only store 5 because we handle the amplitude of the response
         % in the amplitude parameter below.  The first axis of the ellipse
-        % has an implicit value of 1.
+        % has an implicit value of 1.  We want that to be the major axis,
+        % so we bound the other axes at 1.
         paramsLb.Qvec = [1e-2 1e-2 -360 -360 -360];
-        paramsUb.Qvec = [1e2 1e2 360 360 360];
+        paramsUb.Qvec = [1 1 360 360 360];
         
         
     case 2
         paramsLb.Qvec = [1e-2 -360];
-        paramsUb.Qvec = [1e2 360];
+        paramsUb.Qvec = [1 360];
 end
 
 %% Lower bounds
