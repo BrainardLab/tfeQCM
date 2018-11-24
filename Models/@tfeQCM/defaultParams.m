@@ -42,7 +42,7 @@ if (isempty(p.Results.defaultParams))
             params.Qvec = [0.5 0.25 0 0 0];
             
         case 2
-            params.Qvec = [0.5 0.25 0];
+            params.Qvec = [0.5 0];
     end
     
     %% The Naka-Rushton

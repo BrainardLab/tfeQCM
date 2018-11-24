@@ -73,10 +73,10 @@ end
 %% Plot an isoresponse contour of the simualted and fit model
 nTheta = 100;
 directions = UnitCircleGenerate(nTheta);
-[contrasts1,stimuli1] = tfeQCMInvert(params1,directions,params1.crfAmp/3);
+[contrasts1,stimuli1] = tfeQCMInvertDirection(params1,directions,params1.crfAmp/3);
 figure; hold on
 plot(stimuli1(1,:),stimuli1(2,:),'r','LineWidth',3);
-[contrastsFit,stimuliFit] = tfeQCMInvert(paramsFit,directions,params1.crfAmp/3);
+[contrastsFit,stimuliFit] = tfeQCMInvertDirection(paramsFit,directions,params1.crfAmp/3);
 plot(stimuliFit(1,:),stimuliFit(2,:),'b','LineWidth',2);
 
 

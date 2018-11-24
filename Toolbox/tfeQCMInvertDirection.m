@@ -1,8 +1,8 @@
-function [contrasts,stimuli] = tfeQCMInvert(params,directions,response)
+function [contrasts,stimuli] = tfeQCMInvertDirection(params,directions,response)
 % Invert QCM model for a particular direction
 %
 % Synopsis
-%    [contrasts,stimuli] = tfeQCMInvert(params,directions,response)
+%    [contrasts,stimuli] = tfeQCMInvertDirection(params,directions,response)
 %
 % Description:
 %    Take a unit vector specifying a direction in stimulus space, the
@@ -23,9 +23,16 @@ function [contrasts,stimuli] = tfeQCMInvert(params,directions,response)
 %                      passed matrix directions.
 
 % History:
-%   11/20/19  dhb, mab  Wrote it.
-%   11/24/19  dhb       Work on an input matrix, change input row/col
-%                       convention to match QCM.
+%   11/20/18  dhb, mab  Wrote it.
+%   11/24/18  dhb       Work on an input matrix, change input row/col
+%                       convention to match QCM. Works with multiple
+%                       inputs.
+%   11/24/18  dhb       Better name.
+
+%% Paramters check
+if (~tfeQCMCheckParams(params))
+    error('Bad values in QCM parameters structure');
+end
 
 %% Handle the pesky offset and check that there is an in-range contrast.
 % Return NaN if not.
