@@ -1,8 +1,12 @@
 % Demonstrate some basic functionalty for the quadratic color model.
 
+% History:
+%  11/24/18  dhb  Fix up stimuli so that they constrain model.
+
 
 %% Set parameters
 theDimension = 2;
+simulateNoise = true;
 generatePlots = true;
 
 %% Construct the model object
@@ -22,14 +26,14 @@ totalTime = 1000;
 
 %% Specify the stimulus struct. 
 %
-% We'll specify this as a 3 by size(timebase,2) matrix,
+% We'll specify this as a theDimension by size(timebase,2) matrix,
 % where each column is the signed L,M,S contrast of the stimulus
 % at the specified time.  And then we'll blur it so that we have
 % a smoothish signal to look at.
 stimulusStruct.timebase = 0:deltaT:totalTime;
 nTimeSamples = size(stimulusStruct.timebase,2);
 filter = fspecial('gaussian',[1 nTimeSamples],6);
-stimulusStruct.values = rand(theDimension,nTimeSamples);
+stimulusStruct.values = 4*(rand(theDimension,nTimeSamples)-0.5);
 for i = 1:theDimension
     stimulusStruct.values(i,:) = ifft(fft(stimulusStruct.values(i,:)) .* fft(filter)); 
 end
@@ -43,7 +47,7 @@ params1.noiseSd = 0.02;
 params1.offset = 0.5;
 fprintf('Simulated model parameters:\n');
 tfe.paramPrint(params1);
-modelResponseStruct = tfe.computeResponse(params1,stimulusStruct,[],'AddNoise',true);
+modelResponseStruct = tfe.computeResponse(params1,stimulusStruct,[],'AddNoise',simulateNoise);
 if (generatePlots)
     tfe.plot(modelResponseStruct);
 end

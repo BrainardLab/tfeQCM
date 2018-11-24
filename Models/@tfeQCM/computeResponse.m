@@ -27,9 +27,6 @@ neuralResponse = tfeQCMForward(params,stimulusStruct.values);
 modelResponseStruct.timebase = stimulusStruct.timebase;
 modelResponseStruct.values = neuralResponse;
 
-% % Mean center
-% modelResponseStruct.values=modelResponseStruct.values - mean(modelResponseStruct.values);
-
 %% Optionally, convolve with a passed kernel
 modelResponseStruct = obj.applyKernel(modelResponseStruct,kernelStruct,varargin{:});
 

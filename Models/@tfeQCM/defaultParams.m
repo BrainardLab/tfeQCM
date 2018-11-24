@@ -20,8 +20,7 @@ function [params,paramsLb,paramsUb] = defaultParams(obj,varargin)
 % History:
 %   11/20/18  dhb, mab     Keep minor axis smaller than major in limits,
 %                          for first two. 
-
-%% COMMENT DEFAULT PARAMS KEY/VALUE PAIR AS WELL NEW CODE.
+%   11/24/18  dhb          Don't use degenerate default ellipse parameters.
 
 % Parse vargin for options passed here
 p = inputParser; p.KeepUnmatched = true;
@@ -40,10 +39,10 @@ if (isempty(p.Results.defaultParams))
             % We only store 5 because we handle the amplitude of the response
             % in the amplitude parameter below.  The first axis of the ellipse
             % has an implicit value of 1.
-            params.Qvec = [0.99 0.5 0 0 0];
+            params.Qvec = [0.5 0.25 0 0 0];
             
         case 2
-            params.Qvec = [0.99 0];
+            params.Qvec = [0.5 0.25 0];
     end
     
     %% The Naka-Rushton
