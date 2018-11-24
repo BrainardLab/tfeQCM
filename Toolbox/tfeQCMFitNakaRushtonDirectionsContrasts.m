@@ -71,7 +71,7 @@ indDirectionNRParams0 = InitializeNRParams(nIndDirections);
 indDirectionParamsvec0 = NRParamsToVec(indDirectionNRParams0);
 
 %% Set up bounds. Could be a little slicker, maybe
-vlbRaw = [0   0.1	0.01 -5]';
+vlbRaw = [0   0.1  0.01  -5]';
 vubRaw = [5   10   100    5]';
 vlb = [];
 vub = [];
@@ -129,14 +129,15 @@ end
 function NRParams = InitializeNRParams(nIndDirections)
 
 % Reasonable defaults
+nParams = 4;
 Rmax = 1;
-sigma = 0.5;
+sigma = 0.06;
 n = 2;
 offset = 0;
 
 % Set up the cell array
 for ii = 1:nIndDirections
-    NRParams{ii} = zeros(4,1);
+    NRParams{ii} = zeros(nParams,1);
     NRParams{ii}(1) = Rmax;
     NRParams{ii}(2) = sigma;
     NRParams{ii}(3) = n;
