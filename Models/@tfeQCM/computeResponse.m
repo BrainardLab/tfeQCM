@@ -20,17 +20,8 @@ p.addParameter('addNoise',false,@islogical);
 p.parse(params,stimulusStruct,kernelStruct,varargin{:});
 params = p.Results.params;
 
-%% Get the ellipsoid parameters in cannonical form
-[~,~,Q] = EllipsoidMatricesGenerate([1 params.Qvec]','dimension',obj.dimension);
-
-%% Find the length of the points after application of the quadratic
-%
-% This represents the quadaratic component of the neural response after
-% application of the quadratic
-theLengths = diag(sqrt(stimulusStruct.values'*Q*stimulusStruct.values))';
-
-%% Push the quadratic response through a Naka-Rushton non-linearity
-neuralResponse = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],theLengths) + params.offset;
+%% Get neural response from QCM model
+neuralResponse = tfeQCMForward(params,stimulusStruct.values);
 
 %% Make the neural response structure
 modelResponseStruct.timebase = stimulusStruct.timebase;
