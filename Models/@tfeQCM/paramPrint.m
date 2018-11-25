@@ -29,7 +29,7 @@ switch (p.Results.PrintType)
         end
         fprintf('CRF amplitude: %0.2f, CRF semi-saturation: %0.2f, CRF exponent: %0.2f\n',params.crfAmp,params.crfSemi,params.crfExponent);
         fprintf('Exponential filter time constant: %0.2f\n',params.expFalloff);
-        fprintf('Offset constant: %0.2f\n',params.offset);
+        fprintf('Offset constant: %0.2f\n',params.crfOffset);
         fprintf('\n');
     otherwise
         error('Unknown parameter print type passed')

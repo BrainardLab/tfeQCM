@@ -49,7 +49,7 @@ if (isempty(p.Results.defaultParams))
     params.crfAmp = 1;
     params.crfSemi = 1;
     params.crfExponent = 2;
-    params.offset = 0;
+    params.crfOffset = 0;
     
     % Exponential falloff (not used?)
     params.expFalloff = 0.3;
@@ -83,7 +83,7 @@ paramsLb.crfSemi = 1e-2;
 paramsLb.crfExponent = 1e-2;
 paramsLb.expFalloff = 1e-1;
 paramsLb.noiseLevel = 0;
-paramsLb.offset = -2;
+paramsLb.crfOffset = -2;
 
 %% Upper bounds
 paramsUb.crfAmp = 1e1;
@@ -91,13 +91,13 @@ paramsUb.crfSemi = 1e2 ;
 paramsUb.crfExponent = 10;
 paramsUb.expFalloff = 1e1;
 paramsUb.noiseLevel = 100;
-paramsUb.offset = 2;
+paramsUb.crfOffset = 2;
 
 %% Handle noOffset possibility
 if (~isempty(p.Results.defaultParamsInfo) & p.Results.defaultParamsInfo.noOffset)
-    params.offset = 0;
-    paramsLb.offset = 0;
-    paramsUb.offset = 0;
+    params.crfOffset = 0;
+    paramsLb.crfOffset = 0;
+    paramsUb.crfOffset = 0;
 end
 
 end

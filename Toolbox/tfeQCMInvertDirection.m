@@ -36,7 +36,7 @@ end
 
 %% Handle the pesky offset and check that there is an in-range contrast.
 % Return NaN if not.
-offsetResponse = response-params.offset;
+offsetResponse = response-params.crfOffset;
 if (offsetResponse > params.crfAmp | offsetResponse < 0)
     contrasts = NaN;
     stimuli = NaN*ones(size(directions));

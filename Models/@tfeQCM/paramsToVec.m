@@ -25,7 +25,7 @@ switch obj.dimension
         x(7) = params.crfExponent;
         x(8) = params.crfSemi;
         x(9) = params.expFalloff;
-        x(10) = params.offset;
+        x(10) = params.crfOffset;
         
         % Optional inclusion of noise
         if (p.Results.UseNoiseParam)
@@ -39,7 +39,7 @@ switch obj.dimension
         x(4) = params.crfExponent;
         x(5) = params.crfSemi;
         x(6) = params.expFalloff;
-        x(7) = params.offset;
+        x(7) = params.crfOffset;
         
         % Optional inclusion of noise
         if (p.Results.UseNoiseParam)

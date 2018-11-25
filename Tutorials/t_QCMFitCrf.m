@@ -44,7 +44,7 @@ params1.crfAmp = 2;
 params1.crfSemi = 1;
 params1.crfExponent = 2;
 params1.noiseSd = 0.01;
-params1.offset = 0;
+params1.crfOffset = 0;
 fprintf('Simulated model parameters:\n');
 tfe.paramPrint(params1);
 modelResponseStruct = tfe.computeResponse(params1,stimulusStruct,[],'AddNoise',true);
