@@ -40,16 +40,17 @@ function [indDirectionNRParams,indDirectionPredictions,indDirectionResponses,ind
 %      nIndDirections          - Number of independent directions
 %
 % Optional key/value pairs:
-%      lockOffsetToZero        - Logical (default false). Force fits to go through 0 at 0 contrast
+%      'lockOffsetToZero'      - Logical (default false). Force fits to go through 0 at 0 contrast
 %      'commonAmplitude'       - Logical (default false). Force common amplitude across directions.
 %      'commonSemi'            - Logical (default false). Force common semi-saturation across directions.
-%      'commonExp'            - Logical (default false). Force common exponent across directions.
-%      'commonOffset'            - Logical (default false). Force common offset across directions.
+%      'commonExp'             - Logical (default false). Force common exponent across directions.
+%      'commonOffset'          - Logical (default false). Force common offset across directions.
+%
 % See also:
 %
 
 % History:
-%   11/24/19  dhb    Wrote it.
+%   11/24/18  dhb    Wrote it.
 
 %% Parse key/value pairs
 % Parse vargin for options passed here
