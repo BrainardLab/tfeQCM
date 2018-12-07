@@ -28,11 +28,11 @@ end
 status = true;
 tolerance = 1e-3;
 if (dimension == 2)
-    if (params.Qvec(1) > 1+tolerance)
+    if (params.Qvec(1) > 10+tolerance)
         status = false;
     end
 elseif (dimension == 3)
-    if (params.Qvec(1) > 1+tolerance)
+    if (params.Qvec(1) > 10+tolerance)
         status = false;
     end
     if (params.Qvec(2) > params.Qvec(1)+tolerance)

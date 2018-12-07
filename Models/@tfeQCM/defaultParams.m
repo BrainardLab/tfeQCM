@@ -74,7 +74,7 @@ switch obj.dimension
            
     case 2
         paramsLb.Qvec = [1e-2 -360];
-        paramsUb.Qvec = [1 360];
+        paramsUb.Qvec = [1e1 360];
 end
 
 %% Lower bounds
