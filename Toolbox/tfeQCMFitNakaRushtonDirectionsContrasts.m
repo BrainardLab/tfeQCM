@@ -82,8 +82,8 @@ for ii = 1:nIndDirections
 end
 
 %% Initialize parameters
-indDirectionNRParams0 = InitializeNRParams(nIndDirections);
-indDirectionParamsvec0 = NRParamsToVec(indDirectionNRParams0);
+indDirectionNRParams0 = tfeNRInitializeParams(nIndDirections);
+indDirectionParamsvec0 = tfeNRParamsToVec(indDirectionNRParams0);
 
 %% Set up search bounds
 ampLowBound = 0; ampHighBound = 5;
@@ -104,14 +104,14 @@ for ii = 1:nIndDirections
     NRParamsLow(ii).crfExponent = expLowBound;
     NRParamsLow(ii).crfOffset = offsetLowBound;
 end
-vlb = NRParamsToVec(NRParamsLow);
+vlb = tfeNRParamsToVec(NRParamsLow);
 for ii = 1:nIndDirections
     NRParamsHigh(ii).crfAmp = ampHighBound;
     NRParamsHigh(ii).crfSemi = semiHighBound;
     NRParamsHigh(ii).crfExponent = expHighBound;
     NRParamsHigh(ii).crfOffset = offsetHighBound;
 end
-vub = NRParamsToVec(NRParamsHigh);
+vub = tfeNRParamsToVec(NRParamsHigh);
 
 %% Set up linear parameter constraints
 %
@@ -122,7 +122,7 @@ vub = NRParamsToVec(NRParamsHigh);
 %
 % I don't see any easy way around knowing the order in
 % which the parameters are packed into vectors here.
-[~,nParams] = NRVecToParams(vlb,nIndDirections);
+[~,nParams] = tfeNRVecToParams(vlb,nIndDirections);
 if (nIndDirections > 1)
     % Build constraint matrix if there is more than one direction.
     %
@@ -194,7 +194,7 @@ indDirectionParamsvec = fmincon(@(x)FitIndNakaRushtonFun(x,indDirectionResponses
     indDirectionParamsvec0,[],[],Aeq,beq,vlb,vub,[],options); 
 
 [~,indDirectionPredictions] = FitIndNakaRushtonFun(indDirectionParamsvec,indDirectionResponses,indDirectionDirections,indDirectionContrasts,nIndDirections);
-indDirectionNRParams = NRVecToParams(indDirectionParamsvec,nIndDirections);
+indDirectionNRParams = tfeNRVecToParams(indDirectionParamsvec,nIndDirections);
 
 
 end
@@ -205,7 +205,7 @@ function [f,indDirectionPredictions] = FitIndNakaRushtonFun(paramsvec,indDirecti
 f = 0;
 
 % Convert paramsvec to cell array
-NRParams = NRVecToParams(paramsvec,nIndDirections);
+NRParams = tfeNRVecToParams(paramsvec,nIndDirections);
 
 % Loop over directions
 for ii = 1:nIndDirections
@@ -216,59 +216,6 @@ end
 
 end
 
-function paramsvec = NRParamsToVec(NRParams)
-% Convert the NR parameter structure array to one long vector
-%
-% See also: NRVecToParams, InitializeNRParams
-%
 
-    nIndDirections = length(NRParams);
-    paramsvec = [];
-    for ii = 1:nIndDirections
-        paramsvec = [paramsvec ; [NRParams(ii).crfAmp NRParams(ii).crfSemi NRParams(ii).crfExponent NRParams(ii).crfOffset]'];
-    end
-end
-
-function [NRParams,nParams] = NRVecToParams(paramsvec,nIndDirections)
-% Convert the NR parameter vector to struct array
-%
-% See also: NRParamsToVec, InitializeNRParams
-%
-    
-    % Number of parameters.  You just have to know this.  Coordinate
-    % any changes with the NRParamsToVec routine.
-    nParams = 4;
-    
-    % Unpack vector into struct array.
-    for ii = 1:nIndDirections        
-       NRParams(ii).crfAmp =  paramsvec((ii-1)*nParams+1);
-       NRParams(ii).crfSemi = paramsvec((ii-1)*nParams+2);
-       NRParams(ii).crfExponent = paramsvec((ii-1)*nParams+3);
-       NRParams(ii).crfOffset = paramsvec((ii-1)*nParams+4);
-    end
-end
-
-function NRParams = InitializeNRParams(nIndDirections)
-% Initialize the NR parameter struct array
-%
-% See also: NRParamsToVec, NRVecToParams
-%
-
-% Reasonable defaults
-nParams = 4;
-Rmax = 1;
-sigma = 0.06;
-n = 2;
-offset = 0;
-
-% Set up the struct array
-for ii = 1:nIndDirections
-    NRParams(ii).crfAmp = Rmax;
-    NRParams(ii).crfSemi = sigma;
-    NRParams(ii).crfExponent = n;
-    NRParams(ii).crfOffset = offset;
-end
-
-end
 
 
