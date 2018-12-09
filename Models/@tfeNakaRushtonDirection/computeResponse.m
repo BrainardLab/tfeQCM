@@ -5,8 +5,8 @@ function modelResponseStruct = computeResponse(obj,params,stimulusStruct,kernelS
 % direction/contrast form.
 %
 % Optional key/value pairs
-%   'AddNoise' - true/false (default false).  Add noise to computed
-%     response?  Useful for simulations.
+%   'addNoise' - true/false (default false).  Add noise to computed
+%                response?  Useful for simulations.
 
 %% Parse input
 %
@@ -21,7 +21,7 @@ p.addParameter('addNoise',false,@islogical);
 p.parse(params,stimulusStruct,kernelStruct,varargin{:});
 params = p.Results.params;
 
-%% Convert parameters
+%% Convert stimulus values to useful format
 switch obj.dimension
     case 3
         directions = stimulusStruct.values(1:3,:);
@@ -30,7 +30,42 @@ switch obj.dimension
         directions = stimulusStruct.values(1:2,:);
         contrasts = stimulusStruct.values(3,:);
 end
-stimuli = tfeQCMDirectionsContrastsToStimuli(directions,contrasts);
+
+%% Figure out passed directions and make sure they match up with directions
+% this was initialized with.
+
+[indDirectionsTemp,~,whichColumnsOut] = unique(stimulusStruct.values','rows','stable');  % uniquetol(directions',unique_tolerance,'ByRows',true);
+indDirectionsTemp = indDirectionsTemp';
+nIndDirections = size(indDirectionsTemp,2);
+if (nIndDirections > obj.nDirections)
+    error('Passed stimuli with more directions than we know about');
+end
+
+%% Match up directions found in stimuli with those that we have from initializtion
+objDirectionIndices = zeros(nIndDirections,1);
+for ii = 1:nIndDirections
+    for jj = 1:obj.nDirections
+        if (max(abs(indDirectionsTemp(:,ii) - obj.directions(jj,:))) < 1e-10)
+            indDirectionsIntoObjDirectionsIndices(ii) = jj;
+        end
+    end
+end
+if (any(objDirectionIndices == 0))
+    error('Passed stimulus direciton not in set of directions we know about');
+end
+
+%% Working here.  Each direction in object must be in stimulus and vice
+% versa. Check this a bit more here.
+
+%% Parse stimuli in terms of which stimulus belongs to which direction, and
+% match up order with parameters for initialized directions
+for ii = 1:nIndDirections
+    whichColumns = find(whichColumnsOut == ii);
+    indDirectionIndices{ii} = whichColumns;
+    indDirectionResponses{ii} = responses(whichColumns);
+    indDirectionDirections{ii} = indDirectionsTemp(:,ii);
+    indDirectionContrasts{ii} = contrasts(whichColumns);
+end
 
 %% What I want to do is replace the code below with a call to the tfeQCM method.
 % But I get an error about no matching signature when I try that. So for

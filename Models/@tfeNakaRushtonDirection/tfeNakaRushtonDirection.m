@@ -3,7 +3,7 @@ classdef tfeNakaRushtonDirection < tfeQCM
 %  Create at tfeNakaRushtonDirection object
 %
 % Syntax:
-%    tfe = tfeNakaRushtonDirection(varargin);
+%    tfe = tfeNakaRushtonDirection(directions,varargin);
 % 
 % Description:
 %     Implements a model that is quadratic in the color contrast of the
@@ -13,13 +13,20 @@ classdef tfeNakaRushtonDirection < tfeQCM
 %     those specified below.
 %
 % Inputs:
-%    None.
+%    directions                - Matrix specifying the possible stimulus
+%                                directions.  Each direction is in a
+%                                column. Dimensionality of stimuli and
+%                                number of directions are inferred from
+%                                this.  We need to pass this because we
+%                                need some way of associating the
+%                                parameters for each direction with the
+%                                actual directions passed to the
+%                                compute/fit routines.
 %
 % Outputs:
-%    obj         - The object.
+%    obj                       - The object.
 %
 % Optional key/value pairs:
-%      'nDirections'           - Scalar (default 1). Number of color direcitons that will be fit.
 %      'lockOffsetToZero'      - Logical (default false). Force fits to go through 0 at 0 contrast
 %      'commonAmplitude'       - Logical (default false). Force common amplitude across directions.
 %      'commonSemi'            - Logical (default false). Force common semi-saturation across directions.
@@ -43,6 +50,7 @@ classdef tfeNakaRushtonDirection < tfeQCM
         
         % Number of color directions.  We need to know this to set up
         % parameters.
+        directions = [];
         nDirections = 1;
     end
     
@@ -61,13 +69,13 @@ classdef tfeNakaRushtonDirection < tfeQCM
     % but we put the constructor here.
     methods (Access=public)
         % Constructor
-        function obj = tfeNakaRushtonDirection(varargin)
+        function obj = tfeNakaRushtonDirection(directions,varargin)
            
             % Parse input. Need to add any key/value pairs that need to go
             % to the tfe parent class, as well as any that are QCM
             % specific.
             p = inputParser; p.KeepUnmatched = true;
-            p.addParameter('nDirections',1,@isnumeric);
+            p.addRequired(directions,@isnumeric);
             p.addParameter('lockOffsetToZero',false,@islogical);
             p.addParameter('commonAmplitude',false,@islogical);
             p.addParameter('commonSemi',false,@islogical);
@@ -79,12 +87,14 @@ classdef tfeNakaRushtonDirection < tfeQCM
             obj = obj@tfeQCM(varargin{:});
             
             % Set properties for this class
-            nDirections = p.Results.nDirections;
-            lockOffsetToZero = p.Results.lockOffsetToZero;
-            commonAmplitude = p.Results.commonAmplitude;
-            commonSemi = p.Results.commonSemi;
-            commonExp = p.Results.commonExp;
-            commonOffset = p.Results.commonOffset;
+            obj.directions = directions;
+            obj.dimension = size(directions,1);
+            obj.nDirections = size(directions,2);
+            obj.lockOffsetToZero = p.Results.lockOffsetToZero;
+            obj.commonAmplitude = p.Results.commonAmplitude;
+            obj.commonSemi = p.Results.commonSemi;
+            obj.commonExp = p.Results.commonExp;
+            obj.commonOffset = p.Results.commonOffset;
         end
     end 
     
