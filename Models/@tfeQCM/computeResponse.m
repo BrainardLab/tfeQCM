@@ -4,8 +4,8 @@ function modelResponseStruct = computeResponse(obj,params,stimulusStruct,kernelS
 % Compute method for the quadratic color model.
 %
 % Optional key/value pairs
-%   'AddNoise' - true/false (default false).  Add noise to computed
-%     response?  Useful for simulations.
+%   'addNoise' - true/false (default false).  Add noise to computed
+%                response?  Useful for simulations.
 
 %% Parse input
 %
