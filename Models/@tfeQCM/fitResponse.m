@@ -9,15 +9,15 @@ function [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,vararg
 % are not generic.
 %
 % Inputs:
-%   thePacket: a valid packet
+%   thePacket          - A valid packet
+%
+% Outputs:
+%   paramsFit          - Fit parameters
+%   fVal               - Fit error.
+%   predictedResponse  - Response predicted from fit
 %
 % Optional key/value pairs
 %   See tfe.fitResponse for these.
-%
-% Outputs:
-%   paramsFit: fit parameters
-%   fVal: mean value of fit error, mean taken over runs.
-%   predictedResponse: big vector containing the fit response
 
 %% Parse vargin for options passed here
 %

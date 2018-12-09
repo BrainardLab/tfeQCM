@@ -1,8 +1,10 @@
-% Test the QCM fitting and related matters
-%
+% Test the QCM fitting when the design involves explict directions
+
 % Description:
 %   This script synthesizes data for the QCM model and then fits it,
-%   to ensure that we can get back what we put in.  Etc.
+%   to ensure that we can get back what we put in.  Etc. It also
+%   demonstrates fitting contrast response functions in separate directions
+%   with variously constrained Naka-Rushton functions.
 % 
 %   Note that this is developed for the two-dimensional (ellipse) version.
 % 
@@ -15,6 +17,8 @@
 %   1//24/18  dhb       A bit more tuning.  Fix row/col convention.
 %   11/25/18  dhb       Demonstrate code that fits NR functions, and allows
 %                       locking of parameters across directions.
+%   12/8/18   dhb       Start so can make tfe objects for the various NR
+%                       fits
 
 %% Initialize
 clear; close all
@@ -39,7 +43,21 @@ minorAxis = 0.3;
 rotdeg    = 45;
 ellParams = [1 minorAxis rotdeg];
 
-%% Generate Stimulus:
+%% Set up QCM matching parameters above
+tfeComputeResponse = tfeQCM('verbosity','none','dimension',theDimension);
+paramsQCM = tfeComputeResponse.defaultParams;
+paramsQCM.Qvec = [minorAxis rotdeg];
+paramsQCM.crfAmp = Rmax;
+paramsQCM.crfSemi = sigma;
+paramsQCM.crfExponent = n;
+paramsQCM.noiseSd = 0.01;
+paramsQCM.crfOffset = offset;
+paramsQCM.expFalloff = 0.3;
+paramsQCM.noiseSd = 0.1;
+fprintf('\nSimulated QCM parameters:\n');
+tfeComputeResponse.paramPrint(paramsQCM);
+
+%% Generate stimulus
 %
 % Random stimuli bounded between 1 and -1
 RANDOM_STIMULI = false;
@@ -74,7 +92,7 @@ else
     [stimDirections,stimContrasts] = tfeQCMStimuliToDirectionsContrasts(stimuli);
 end
 
-%% Generate response
+%% Generate response by hand
 % This does by hand what our compute response routine does, and is here
 % just to expose that calculation and make sure it does what we think it
 % should.
@@ -97,30 +115,21 @@ Q = A'*A;
 % Get the radius
 radius = diag(sqrt(stimuli'*Q*stimuli))';
 
-% Get the neural response values
-R = nakaRushton(radius,sigma,n,Rmax,offset);
+% Get the neural response values using the Naka-Rushton function
+R = tfeQCMComputeNakaRushton(radius,sigma,n,Rmax,offset);
 
 %% Let's check that the QCM forward model gives the same responses.
 %
 % Construct the model object 
-tfeResponseCheck = tfeQCM('verbosity','none','dimension',theDimension);
 stimulusStruct.values = stimuli;
 stimulusStruct.timebase = 1:numStim;
 nTimeSamples = size(stimulusStruct.timebase,2);
 
 % Set parameters and simulate responses
-params1 = tfeResponseCheck.defaultParams;
-params1.Qvec = [minorAxis rotdeg];
-params1.crfAmp = Rmax;
-params1.crfSemi = sigma;
-params1.crfExponent = n;
-params1.noiseSd = 0.01;
-params1.crfOffset = offset;
-modelResponseStruct = tfeResponseCheck.computeResponse(params1,stimulusStruct,[],'AddNoise',false);
+modelResponseStruct = tfeComputeResponse.computeResponse(paramsQCM,stimulusStruct,[],'AddNoise',false);
 if (max(abs(R-modelResponseStruct.values)) > 1e-15)
     error('Hand computation of QCM model does not match tfeQCM forward model');
 end
-
 
 %%  Use the tfeQCM to fit the stim/resp:
 %
@@ -147,7 +156,7 @@ else
     defaultParamsInfo.noOffset = false;
 end
 [paramsQCMFit,fVal,fitResponseStructQCM] = temporalFitQCM.fitResponse(thePacket,'defaultParamsInfo',defaultParamsInfo);
-fprintf('Model parameter from fits:\n');
+fprintf('\nQCM parameters from fits:\n');
 temporalFitQCM.paramPrint(paramsQCMFit)
 
 %%  Check that the fit recovers the responses we put in
@@ -171,7 +180,7 @@ radiusQcm =  diag(sqrt(stimuli'*Q_qcm*stimuli))';
 % ambiguities in the parameterization of the QCM model, because of a +/- 90
 % degree ambiguit about which is the major and which is the minor axis of
 % the ellipse.
-Rqcm  = nakaRushton(radiusQcm,paramsQCMFit.crfSemi,paramsQCMFit.crfExponent,paramsQCMFit.crfAmp, paramsQCMFit.crfOffset);
+Rqcm  = tfeQCMComputeNakaRushton(radiusQcm,paramsQCMFit.crfSemi,paramsQCMFit.crfExponent,paramsQCMFit.crfAmp, paramsQCMFit.crfOffset);
 if (max(abs(R-Rqcm)/max(abs(R))) > 1e-2)
     error('Hand computation of QCM model does not match tfeQCM forward model');
 end
@@ -198,11 +207,11 @@ legend([p1 p2], 'original', 'QCM recovered')
 
 %%  Check that Naka-Rushton funciton inverts
 thresholdResponse = paramsQCMFit.crfAmp/3;
-eqContrast = InvertNakaRushton([paramsQCMFit.crfAmp,paramsQCMFit.crfSemi,paramsQCMFit.crfExponent],thresholdResponse-paramsQCMFit.crfOffset);
+eqContrast = InverttfeQCMComputeNakaRushton([paramsQCMFit.crfAmp,paramsQCMFit.crfSemi,paramsQCMFit.crfExponent],thresholdResponse-paramsQCMFit.crfOffset);
 circlePoints = eqContrast*UnitCircleGenerate(numStim);
 [~,Ainv,Q] = EllipsoidMatricesGenerate([1 paramsQCMFit.Qvec],'dimension',2);
 ellipsePoints = Ainv*circlePoints;
-checkThresh = ComputeNakaRushton([paramsQCMFit.crfAmp,paramsQCMFit.crfSemi,paramsQCMFit.crfExponent],diag(sqrt(ellipsePoints'*Q*ellipsePoints))) + paramsQCMFit.crfOffset;
+checkThresh = ComputetfeQCMComputeNakaRushton([paramsQCMFit.crfAmp,paramsQCMFit.crfSemi,paramsQCMFit.crfExponent],diag(sqrt(ellipsePoints'*Q*ellipsePoints))) + paramsQCMFit.crfOffset;
 if (any(abs(checkThresh-thresholdResponse) > 1e-10))
     error('Did not invert QCM model correctly');
 end
@@ -218,7 +227,7 @@ if (~RANDOM_STIMULI)
     maxResponse = max(directionResponses);
     
     % Invert model for chosen direction
-    [contrastFromSim,stimulusFromSim] = tfeQCMInvertDirection(params1,theDirection,maxResponse/maxResponseFactor);
+    [contrastFromSim,stimulusFromSim] = tfeQCMInvertDirection(paramsQCM,theDirection,maxResponse/maxResponseFactor);
     [contrastFromFit,stimulusFromFit] = tfeQCMInvertDirection(paramsQCMFit,theDirection,maxResponse/maxResponseFactor);
 
     % Plot simulated CRF and inverted points
@@ -231,10 +240,10 @@ if (~RANDOM_STIMULI)
     % Plot an isoresponse contour of the simualted and fit model
     nTheta = 100;
     circleDirections = UnitCircleGenerate(nTheta);
-    [contrasts1,stimuli1] = tfeQCMInvertDirection(params1,circleDirections,params1.crfAmp/3);
+    [contrasts1,stimuli1] = tfeQCMInvertDirection(paramsQCM,circleDirections,paramsQCM.crfAmp/3);
     figure; hold on
     plot(stimuli1(1,:),stimuli1(2,:),'r','LineWidth',3);
-    [contrastsFit,stimuliFit] = tfeQCMInvertDirection(paramsQCMFit,circleDirections,params1.crfAmp/3);
+    [contrastsFit,stimuliFit] = tfeQCMInvertDirection(paramsQCMFit,circleDirections,paramsQCM.crfAmp/3);
     plot(stimuliFit(1,:),stimuliFit(2,:),'b','LineWidth',2);
 end
 
@@ -290,12 +299,12 @@ if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
         
         % Compute and plot predicted functions
         plotContrasts = linspace(0,max(indDirectionContrasts{ii}),100);
-        plotPredictions = ComputeNakaRushton([indDirectionNRParams(ii).crfAmp,indDirectionNRParams(ii).crfSemi,indDirectionNRParams(ii).crfExponent],plotContrasts) + indDirectionNRParams(ii).crfOffset;
+        plotPredictions = ComputetfeQCMComputeNakaRushton([indDirectionNRParams(ii).crfAmp,indDirectionNRParams(ii).crfSemi,indDirectionNRParams(ii).crfExponent],plotContrasts) + indDirectionNRParams(ii).crfOffset;
         plot(plotContrasts,plotPredictions,'b','LineWidth',4);
         
         % Compute and plot predicted functions, common amplitude
         plotContrasts = linspace(0,max(indDirectionContrasts{ii}),100);
-        plotPredictionsCommon = ComputeNakaRushton([indDirectionNRParamsCommon(ii).crfAmp,indDirectionNRParamsCommon(ii).crfSemi,indDirectionNRParamsCommon(ii).crfExponent],plotContrasts) + indDirectionNRParamsCommon(ii).crfOffset;
+        plotPredictionsCommon = ComputetfeQCMComputeNakaRushton([indDirectionNRParamsCommon(ii).crfAmp,indDirectionNRParamsCommon(ii).crfSemi,indDirectionNRParamsCommon(ii).crfExponent],plotContrasts) + indDirectionNRParamsCommon(ii).crfOffset;
         plot(plotContrasts,plotPredictionsCommon,'g','LineWidth',2);
     end
     
