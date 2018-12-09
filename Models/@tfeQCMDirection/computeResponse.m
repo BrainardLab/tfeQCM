@@ -5,8 +5,8 @@ function modelResponseStruct = computeResponse(obj,params,stimulusStruct,kernelS
 % direction/contrast form.
 %
 % Optional key/value pairs
-%   'AddNoise' - true/false (default false).  Add noise to computed
-%     response?  Useful for simulations.
+%   'addNoise'         - true/false (default false).  Add noise to computed
+%                        response?  Useful for simulations.
 
 %% Parse input
 %
@@ -21,7 +21,7 @@ p.addParameter('addNoise',false,@islogical);
 p.parse(params,stimulusStruct,kernelStruct,varargin{:});
 params = p.Results.params;
 
-%% Convert parameters
+%% Convert stimulus values to useful format
 switch obj.dimension
     case 3
         directions = stimulusStruct.values(1:3,:);
