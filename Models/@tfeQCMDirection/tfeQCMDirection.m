@@ -3,13 +3,14 @@ classdef tfeQCMDirection < tfeQCM
 %  Create at tfeQCMDirection (Quadratic Color Model) object
 %
 % Syntax:
-%    tfe = tfeQCM(varargin);
+%    tfe = tfeQCMDirection(varargin);
 % 
 % Description:
 %     Implements a model that is quadratic in the color contrast of the
 %     stimulus. Stimulus specified as unit vector direction and contrast.
 %
-%     Inherits optional key/value pairs from parent class tfeQCM.
+%     Inherits optional key/value pairs from parent class tfeQCM, plus
+%     those specified below.
 %
 % Inputs:
 %    None.
@@ -50,20 +51,11 @@ classdef tfeQCMDirection < tfeQCM
             % Parse input. Need to add any key/value pairs that need to go
             % to the tfe parent class, as well as any that are QCM
             % specific.
-            p = inputParser;
-            p.addParameter('verbosity','none',@ischar);
-            p.addParameter('dimension',3,@(x) (isnumeric(x) & isscalar(x)));
+            p = inputParser; p.KeepUnmatched = true;
             p.parse(varargin{:});
             
             % Base class constructor
-            obj = obj@tfeQCM('verbosity',p.Results.verbosity);
-            
-            % Set dimension
-            obj.dimension = p.Results.dimension;
-            if (obj.dimension ~= 2 & obj.dimension ~= 3)
-                error('Can only handle dimension 2 or 3');
-            end
-
+            obj = obj@tfeQCM(varargin{:});
         end
     end 
     
