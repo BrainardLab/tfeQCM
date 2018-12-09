@@ -89,6 +89,10 @@ indDirectionParamsvec0 = tfeNRParamsToVec(indDirectionNRParams0);
 ampLowBound = 0; ampHighBound = 5;
 semiLowBound = 0.01; semiHighBound = 10;
 expLowBound = 0.01; expHighBound = 10;
+expFalloffLowBound = indDirectionNRParams0.expFalloff;
+expFalloffHighBound = indDirectionNRParams0.expFalloff;
+noiseSdLowBound = indDirectionNRParams0.noiseSd;
+noiseSdHighBound = indDirectionNRParams0.noiseSd;
 if (p.Results.lockOffsetToZero)
     offsetLowBound = 0;
     offsetHighBound = 0;
@@ -103,6 +107,8 @@ for ii = 1:nIndDirections
     NRParamsLow(ii).crfSemi = semiLowBound;
     NRParamsLow(ii).crfExponent = expLowBound;
     NRParamsLow(ii).crfOffset = offsetLowBound;
+    NRParamsLow(ii).expFalloff = expFalloffLowBound;
+    NRParamsLow(ii).noiseSd = noiseSdLowBound;
 end
 vlb = tfeNRParamsToVec(NRParamsLow);
 for ii = 1:nIndDirections
@@ -110,6 +116,8 @@ for ii = 1:nIndDirections
     NRParamsHigh(ii).crfSemi = semiHighBound;
     NRParamsHigh(ii).crfExponent = expHighBound;
     NRParamsHigh(ii).crfOffset = offsetHighBound;
+    NRParamsHigh(ii).expFalloff = expFalloffHighBound;
+    NRParamsHigh(ii).noiseSd = noiseSdHighBound;
 end
 vub = tfeNRParamsToVec(NRParamsHigh);
 

@@ -127,7 +127,7 @@ stimulusStruct.values = stimuli;
 stimulusStruct.timebase = 1:numStim;
 
 % Set parameters and simulate responses
-QCMResponseStruct = QCMObj.computeResponse(paramsQCM,stimulusStruct,[],'AddNoise',false);
+QCMResponseStruct = QCMObj.computeResponse(paramsQCM,stimulusStruct,[],'addNoise',false);
 if (max(abs(QCMResponsesByHand-QCMResponseStruct.values)/max(QCMResponseStruct.values(:))) > 1e-6)
     error('Hand computation of QCM model does not match tfeQCM forward model');
 end
@@ -135,7 +135,7 @@ end
 %%  Use the tfeQCM to fit the stim/resp:
 %
 % Get the tfeQCM object
-QCMNoisyResponseStruct = QCMObj.computeResponse(paramsQCM,stimulusStruct,[],'AddNoise',true);
+QCMNoisyResponseStruct = QCMObj.computeResponse(paramsQCM,stimulusStruct,[],'addNoise',true);
 
 % Construct a packet for the QCM to fit.
 thePacket.stimulus = stimulusStruct;
@@ -155,7 +155,7 @@ QCMObj.paramPrint(fitQCMParams)
 
 %%  Check that the fit recovers the responses we put in to reasonable approximation
 % This will break if we simulate too much noise
-fitQCMResponseStruct = QCMObj.computeResponse(fitQCMParams,stimulusStruct,[],'AddNoise',false);
+fitQCMResponseStruct = QCMObj.computeResponse(fitQCMParams,stimulusStruct,[],'addNoise',false);
 if (max(abs(fitQCMResponseStruct.values-QCMResponseStruct.values)/max(QCMResponseStruct.values(:))) > 1e-2)
     error('Fit does not do a good job of recovering responses');
 end

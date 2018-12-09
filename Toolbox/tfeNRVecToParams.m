@@ -13,7 +13,7 @@ function [NRParams,nParams] = tfeNRVecToParams(paramsvec,nIndDirections)
     
     % Unpack vector into struct array.
     for ii = 1:nIndDirections        
-        NRParams(ii).crfAmp =  paramsvec((ii-1)*nParams+1);
+        NRParams(ii).crfAmp = paramsvec((ii-1)*nParams+1);
         NRParams(ii).crfSemi = paramsvec((ii-1)*nParams+2);
         NRParams(ii).crfExponent = paramsvec((ii-1)*nParams+3);
         NRParams(ii).crfOffset = paramsvec((ii-1)*nParams+4);

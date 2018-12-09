@@ -47,7 +47,7 @@ params1.noiseSd = 0.01;
 params1.crfOffset = 0;
 fprintf('Simulated model parameters:\n');
 tfe.paramPrint(params1);
-modelResponseStruct = tfe.computeResponse(params1,stimulusStruct,[],'AddNoise',true);
+modelResponseStruct = tfe.computeResponse(params1,stimulusStruct,[],'addNoise',true);
 
 %% Each color direction is plotted in increasing contrast order.
 if (generatePlots)
