@@ -1,15 +1,15 @@
-classdef tfeQCM < tfe
-% tfeQCM
-%  Create at tfeQCM (Quadratic Color Model) object
+classdef tfeQCMDirection < tfeQCM
+% tfeQCMDirection
+%  Create at tfeQCMDirection (Quadratic Color Model) object
 %
 % Syntax:
 %    tfe = tfeQCM(varargin);
 % 
 % Description:
 %     Implements a model that is quadratic in the color contrast of the
-%     stimulus.
+%     stimulus. Stimulus specified as unit vector direction and contrast.
 %
-%     Inherits optional key/value pairs from parent class tfe.
+%     Inherits optional key/value pairs from parent class tfeQCM.
 %
 % Inputs:
 %    None.
@@ -24,13 +24,10 @@ classdef tfeQCM < tfe
 %
 
 % History:
-%   06/26/16 dhb       Started in on this.
-%   08/24/18 dhb, mab  Get key/value dimension pair working.
+%   12/09/18 dhb       Wrote it.
 
     % Public, read-only properties.
-    properties (SetAccess = protected, GetAccess = public)
-        % Specify dimension of ellipsoid.  Can be 2 or 3.
-        dimension = 3;
+    properties (SetAccess = private, GetAccess = public)
     end
     
     % Private properties. Only methods of the parent class can set these
@@ -48,7 +45,7 @@ classdef tfeQCM < tfe
     % but we put the constructor here.
     methods (Access=public)
         % Constructor
-        function obj = tfeQCM(varargin)
+        function obj = tfeQCMDirection(varargin)
            
             % Parse input. Need to add any key/value pairs that need to go
             % to the tfe parent class, as well as any that are QCM
@@ -59,7 +56,7 @@ classdef tfeQCM < tfe
             p.parse(varargin{:});
             
             % Base class constructor
-            obj = obj@tfe('verbosity',p.Results.verbosity);
+            obj = obj@tfeQCM('verbosity',p.Results.verbosity);
             
             % Set dimension
             obj.dimension = p.Results.dimension;
@@ -67,15 +64,6 @@ classdef tfeQCM < tfe
                 error('Can only handle dimension 2 or 3');
             end
 
-        end
-        
-        % Override tfe fitError so we can scale appropriately for this
-        % problem.  This makes a difference to fmincon's behavior, but
-        % I did not want to change the tfe function itself. 
-        function [fVal,modelResponseStruct] = fitError(obj,paramsVec,thePacket,varargin)
-
-            [fVal,modelResponseStruct] = fitError@tfe(obj,paramsVec,thePacket,varargin{:});
-            fVal= 1000*fVal;
         end
     end 
     

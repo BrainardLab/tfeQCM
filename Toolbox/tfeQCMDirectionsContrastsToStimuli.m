@@ -9,7 +9,7 @@ function [stimuli] = tfeQCMDirectionsContrastsToStimuli(directions,contrasts)
 %
 % Inputs:
 %    directions    - Stimuli, with stimulus contrasts in columns and each
-%                    column vector having a vector lenght of 1.
+%                    column vector having a vector length of 1.
 %    contrasts     - Row vector of contrasts. Multiply directions by
 %                    contrasts to get stimuli.  Can have a scalar here,
 %                    in which case it is in common across direcitons.
@@ -31,8 +31,8 @@ function [stimuli] = tfeQCMDirectionsContrastsToStimuli(directions,contrasts)
 
 %% Convert directions/contrasts to stimuli
 if (length(contrasts(:)) == 1)
-    stimuli = contrasts(1)*directions;
+    stimuli = directions*contrasts(1);
 else
-    stimuli = diag(contrasts)*directions;
+    stimuli = directions*diag(contrasts);
 end
 

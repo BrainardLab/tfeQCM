@@ -44,8 +44,10 @@ rotdeg    = 45;
 ellParams = [1 minorAxis rotdeg];
 
 %% Set up QCM matching parameters above
-tfeComputeResponse = tfeQCM('verbosity','none','dimension',theDimension);
-paramsQCM = tfeComputeResponse.defaultParams;
+%
+% Keep noise very small for testing
+QCMObj = tfeQCM('verbosity','none','dimension',theDimension);
+paramsQCM = QCMObj.defaultParams;
 paramsQCM.Qvec = [minorAxis rotdeg];
 paramsQCM.crfAmp = Rmax;
 paramsQCM.crfSemi = sigma;
@@ -53,9 +55,9 @@ paramsQCM.crfExponent = n;
 paramsQCM.noiseSd = 0.01;
 paramsQCM.crfOffset = offset;
 paramsQCM.expFalloff = 0.3;
-paramsQCM.noiseSd = 0.005;
+paramsQCM.noiseSd = 0.003;
 fprintf('\nSimulated QCM parameters:\n');
-tfeComputeResponse.paramPrint(paramsQCM);
+QCMObj.paramPrint(paramsQCM);
 
 %% Generate stimulus
 %
@@ -125,20 +127,19 @@ stimulusStruct.values = stimuli;
 stimulusStruct.timebase = 1:numStim;
 
 % Set parameters and simulate responses
-tfeQCMModelResponseStruct = tfeComputeResponse.computeResponse(paramsQCM,stimulusStruct,[],'AddNoise',false);
-if (max(abs(QCMResponsesByHand-tfeQCMModelResponseStruct.values)/max(tfeQCMModelResponseStruct.values(:))) > 1e-6)
+QCMResponseStruct = QCMObj.computeResponse(paramsQCM,stimulusStruct,[],'AddNoise',false);
+if (max(abs(QCMResponsesByHand-QCMResponseStruct.values)/max(QCMResponseStruct.values(:))) > 1e-6)
     error('Hand computation of QCM model does not match tfeQCM forward model');
 end
 
 %%  Use the tfeQCM to fit the stim/resp:
 %
 % Get the tfeQCM object
-temporalFitQCM = tfeQCM('verbosity','none','dimension',theDimension);
-tfeQCMNoisyModelResponseStruct = tfeComputeResponse.computeResponse(paramsQCM,stimulusStruct,[],'AddNoise',true);
+QCMNoisyResponseStruct = QCMObj.computeResponse(paramsQCM,stimulusStruct,[],'AddNoise',true);
 
 % Construct a packet for the QCM to fit.
 thePacket.stimulus = stimulusStruct;
-thePacket.response = tfeQCMNoisyModelResponseStruct;
+thePacket.response = QCMNoisyResponseStruct;
 thePacket.kernel = [];
 thePacket.metaData = [];
 
@@ -148,26 +149,56 @@ if (NOOFFSET)
 else
     defaultParamsInfo.noOffset = false;
 end
-[paramsQCMFit,fVal,fitResponseStructQCM] = temporalFitQCM.fitResponse(thePacket,'defaultParamsInfo',defaultParamsInfo);
-fprintf('\nQCM parameters from fits:\n');
-temporalFitQCM.paramPrint(paramsQCMFit)
+[fitQCMParams,fVal,fitResponseStructQCM] = QCMObj.fitResponse(thePacket,'defaultParamsInfo',defaultParamsInfo);
+fprintf('\nQCM parameters from fit:\n');
+QCMObj.paramPrint(fitQCMParams)
 
 %%  Check that the fit recovers the responses we put in to reasonable approximation
 % This will break if we simulate too much noise
-tfeFitQCMModelResponseStruct = tfeComputeResponse.computeResponse(paramsQCMFit,stimulusStruct,[],'AddNoise',false);
-if (max(abs(tfeFitQCMModelResponseStruct.values-tfeQCMModelResponseStruct.values)/max(tfeQCMModelResponseStruct.values(:))) > 1e-2)
+fitQCMResponseStruct = QCMObj.computeResponse(fitQCMParams,stimulusStruct,[],'AddNoise',false);
+if (max(abs(fitQCMResponseStruct.values-QCMResponseStruct.values)/max(QCMResponseStruct.values(:))) > 1e-2)
     error('Fit does not do a good job of recovering responses');
 end
 
+%% Verify QCMDirection fit 
+if (~RANDOM_STIMULI)
+    % Create direction QCM object
+    QCMDirectionObj = tfeQCMDirection('verbosity','none','dimension',theDimension);
+
+    % Use direction object to compute response. Should get same answer as
+    % with regular QCM above.
+    directionStimulusStruct = stimulusStruct;
+    directionStimulusStruct.values(1:theDimension,:) = stimDirections;
+    directionStimulusStruct.values(theDimension+1,:) = stimContrasts;
+    QCMDirectionResponseStruct = QCMDirectionObj.computeResponse(paramsQCM,directionStimulusStruct,[],'AddNoise',false);
+    if (max(abs(QCMDirectionResponseStruct.values-QCMResponseStruct.values)/max(QCMResponseStruct.values(:))) > 1e-8)
+        error('Direction and direct QCM objects do not compute same responses');
+    end
+    
+    % Now fit with direction object and make sure that works the same.
+    theDirectionPacket = thePacket;
+    theDirectionPacket.stimulus = directionStimulusStruct;
+    [fitQCMDirectionParams,fVal,fitQCMDirectionResponseStruct] = QCMDirectionObj.fitResponse(theDirectionPacket,'defaultParamsInfo',defaultParamsInfo);
+    fprintf('\nQCM parameters from direction fit:\n');
+    QCMDirectionObj.paramPrint(fitQCMDirectionParams)
+    if (max(abs(fitQCMDirectionResponseStruct.values-fitQCMResponseStruct.values)/max(fitQCMResponseStruct.values(:))) > 1e-8)
+        error('Direction and direct QCM objects do not fit the same');
+    end
+end
+
 %%  Check that Naka-Rushton funciton inverts
-thresholdResponse = paramsQCMFit.crfAmp/3;
-eqContrast = InvertNakaRushton([paramsQCMFit.crfAmp,paramsQCMFit.crfSemi,paramsQCMFit.crfExponent],thresholdResponse-paramsQCMFit.crfOffset);
+thresholdResponse = fitQCMParams.crfAmp/3;
+eqContrast = InvertNakaRushton([fitQCMParams.crfAmp,fitQCMParams.crfSemi,fitQCMParams.crfExponent],thresholdResponse-fitQCMParams.crfOffset);
 circlePoints = eqContrast*UnitCircleGenerate(numStim);
-[~,Ainv,Q] = EllipsoidMatricesGenerate([1 paramsQCMFit.Qvec],'dimension',2);
+[~,Ainv,Q] = EllipsoidMatricesGenerate([1 fitQCMParams.Qvec],'dimension',2);
 ellipsePoints = Ainv*circlePoints;
-checkThresh = ComputeNakaRushton([paramsQCMFit.crfAmp,paramsQCMFit.crfSemi,paramsQCMFit.crfExponent],diag(sqrt(ellipsePoints'*Q*ellipsePoints))) + paramsQCMFit.crfOffset;
+checkThresh = tfeQCMComputeNakaRushton(diag(sqrt(ellipsePoints'*Q*ellipsePoints)),fitQCMParams.crfSemi,fitQCMParams.crfExponent,fitQCMParams.crfAmp,fitQCMParams.crfOffset);
+checkThresh1 = ComputeNakaRushton([fitQCMParams.crfAmp,fitQCMParams.crfSemi,fitQCMParams.crfExponent],diag(sqrt(ellipsePoints'*Q*ellipsePoints))) + fitQCMParams.crfOffset;
 if (any(abs(checkThresh-thresholdResponse) > 1e-10))
     error('Did not invert QCM model correctly');
+end
+if (any(abs(checkThresh-checkThresh1) > 1e-10))
+    error('Naka-Rushton issue in two ways of computing it');
 end
 
 %%  Find contrast in given direction that produces desired response
@@ -182,7 +213,7 @@ if (~RANDOM_STIMULI)
     
     % Invert model for chosen direction
     [contrastFromSim,stimulusFromSim] = tfeQCMInvertDirection(paramsQCM,theDirection,maxResponse/maxResponseFactor);
-    [contrastFromFit,stimulusFromFit] = tfeQCMInvertDirection(paramsQCMFit,theDirection,maxResponse/maxResponseFactor);
+    [contrastFromFit,stimulusFromFit] = tfeQCMInvertDirection(fitQCMParams,theDirection,maxResponse/maxResponseFactor);
 
     % Plot simulated CRF and inverted points
     figure; hold on
@@ -197,7 +228,7 @@ if (~RANDOM_STIMULI)
     [contrasts1,stimuli1] = tfeQCMInvertDirection(paramsQCM,circleDirections,paramsQCM.crfAmp/3);
     figure; hold on
     plot(stimuli1(1,:),stimuli1(2,:),'r','LineWidth',3);
-    [contrastsFit,stimuliFit] = tfeQCMInvertDirection(paramsQCMFit,circleDirections,paramsQCM.crfAmp/3);
+    [contrastsFit,stimuliFit] = tfeQCMInvertDirection(fitQCMParams,circleDirections,paramsQCM.crfAmp/3);
     plot(stimuliFit(1,:),stimuliFit(2,:),'b','LineWidth',2);
 end
 
