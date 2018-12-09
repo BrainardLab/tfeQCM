@@ -21,6 +21,7 @@ function [params,paramsLb,paramsUb] = defaultParams(obj,varargin)
 %   11/20/18  dhb, mab     Keep minor axis smaller than major in limits,
 %                          for first two. 
 %   11/24/18  dhb          Don't use degenerate default ellipse parameters.
+%   12/09/18  dhb          For two-dimensional model, angle in range [-90,90]
 
 % Parse vargin for options passed here
 p = inputParser; p.KeepUnmatched = true;
@@ -73,8 +74,8 @@ switch obj.dimension
         paramsUb.Qvec = [1 1 360 360 360];
            
     case 2
-        paramsLb.Qvec = [1e-2 -360];
-        paramsUb.Qvec = [1 360];
+        paramsLb.Qvec = [1e-2 -90];
+        paramsUb.Qvec = [1 90];
 end
 
 %% Lower bounds
