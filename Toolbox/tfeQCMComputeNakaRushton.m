@@ -31,6 +31,6 @@ function response = tfeQCMComputeNakaRushton(contrastSupport,K,n,Rmax,offset)
 %   11/24/18  dhb    Call through BLTB ComputeNakaRushton.
 
 % Naka-Rushton Function
-response = ComputetfeQCMComputeNakaRushton([Rmax,K,n],contrastSupport) + offset;
+response = ComputeNakaRushton([Rmax,K,n],contrastSupport) + offset;
 
 end

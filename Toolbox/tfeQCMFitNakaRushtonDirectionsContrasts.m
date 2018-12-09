@@ -209,7 +209,7 @@ NRParams = NRVecToParams(paramsvec,nIndDirections);
 
 % Loop over directions
 for ii = 1:nIndDirections
-    indDirectionPredictions{ii} = ComputetfeQCMComputeNakaRushton([NRParams(ii).crfAmp,NRParams(ii).crfSemi,NRParams(ii).crfExponent],indDirectionContrasts{ii}) + NRParams(ii).crfOffset;
+    indDirectionPredictions{ii} = ComputeNakaRushton([NRParams(ii).crfAmp,NRParams(ii).crfSemi,NRParams(ii).crfExponent],indDirectionContrasts{ii}) + NRParams(ii).crfOffset;
     diff = indDirectionResponses{ii}-indDirectionPredictions{ii};
     f = f + sum(diff.^2);
 end

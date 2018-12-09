@@ -34,6 +34,6 @@ dimension = size(stimuli,1);
 theLengths = diag(sqrt(stimuli'*Q*stimuli))';
 
 %% Push the quadratic response through a Naka-Rushton non-linearity
-responses = ComputetfeQCMComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],theLengths) + params.crfOffset;
+responses = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],theLengths) + params.crfOffset;
 
 
