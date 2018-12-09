@@ -35,7 +35,7 @@ end
 
 % Invert Naka rushton to find desired output of quadratic computation.
 theDimension = length(direction);
-desiredEqContrast = InverttfeQCMComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],offsetResponse);
+desiredEqContrast = InvertNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],offsetResponse);
 
 % Find what comes out of quadratic for the passed direction.
 [~,Ainv,Q] = EllipsoidMatricesGenerate([1 params.Qvec],'dimension',theDimension);

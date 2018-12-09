@@ -45,7 +45,7 @@ end
 
 %% Invert Naka rushton to find desired output of quadratic computation.
 theDimension = size(directions,1);
-desiredEqContrast = InverttfeQCMComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],offsetResponse);
+desiredEqContrast = InvertNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],offsetResponse);
 
 %% Loop over directions and invert each one
 %
