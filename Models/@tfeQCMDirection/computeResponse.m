@@ -36,7 +36,8 @@ stimuli = tfeQCMDirectionsContrastsToStimuli(directions,contrasts);
 % But I get an error about no matching signature when I try that. So for
 % now just doing the same calculation here.
 %
-% neuralResponse = computeResponse@tfeQCM(params,stimuli);
+% stimulusStruct.values = stimuli;
+% neuralResponse = computeResponse@tfeQCM(params,stimulusStruct,kernelStruct,varargin{:});
 
 %% Get neural response from QCM model
 neuralResponse = tfeQCMForward(params,stimuli);

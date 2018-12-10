@@ -5,6 +5,9 @@
 %   to ensure that we can get back what we put in.  Etc. It also
 %   demonstrates fitting contrast response functions in separate directions
 %   with variously constrained Naka-Rushton functions.
+%
+%   Every once in a while a numerical check fails in this, which is because
+%   there is some random noise added to the simulated data.
 % 
 %   Note that this is developed for the two-dimensional (ellipse) version.
 % 
