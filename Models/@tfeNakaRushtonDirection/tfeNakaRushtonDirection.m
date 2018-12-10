@@ -75,13 +75,13 @@ classdef tfeNakaRushtonDirection < tfeQCM
             % to the tfe parent class, as well as any that are QCM
             % specific.
             p = inputParser; p.KeepUnmatched = true;
-            p.addRequired(directions,@isnumeric);
+            p.addRequired('directions',@isnumeric);
             p.addParameter('lockOffsetToZero',false,@islogical);
             p.addParameter('commonAmplitude',false,@islogical);
             p.addParameter('commonSemi',false,@islogical);
             p.addParameter('commonExp',false,@islogical);
             p.addParameter('commonOffset',false,@islogical);
-            p.parse(varargin{:});
+            p.parse(directions,varargin{:});
             
             % Base class constructor
             obj = obj@tfeQCM(varargin{:});

@@ -15,32 +15,27 @@ function [params,paramsLb,paramsUb] = defaultParams(obj,varargin)
 % History:
 %   12/09/18  dhb          Wrote it.
 
-% Parse vargin for options passed here
+%% Parse vargin for options passed here
 p = inputParser; p.KeepUnmatched = true;
 p.addParameter('defaultParams',[],@(x)(isempty(x) | isstruct(x)));
 p.parse(varargin{:});
 
 if (isempty(p.Results.defaultParams))
-    %% Default parameters for Q
-    %
-    % This is number of directions specific
-    params = tfeNRInitializeParams(nDirections);
-
-    
-    %% The Naka-Rushton
-    params.crfAmp = 1;
-    params.crfSemi = 1;
-    params.crfExponent = 2;
-    params.crfOffset = 0;
-    
-    % Exponential falloff (not used?)
-    params.expFalloff = 0.3;
-    
-    % Noise level (used for simulations)
-    params.noiseSd = 0.2;
+    % Set up structure
+    params = tfeNRInitializeParams(obj.nDirections);
     
 else
     params = p.Results.defaultParams;
+end
+
+%% Check on parameters
+for ii = 1:obj.nDirections
+    if (params(ii).noiseSd ~= params(1).noiseSd)
+        error('Noise sd parameter not matched across directions in parameters struct array');
+    end
+    if (params(ii).expFalloff ~= params(1).expFalloff)
+        error('Exp falloff parameter not matched across directions in parameters struct array');
+    end
 end
 
 %% Set up search bounds
@@ -57,10 +52,10 @@ end
 
 % These don't currently get searched over,
 % so we just set them at their initial values.
-expFalloffLowBound = params.expFalloff;
-expFalloffHighBound = params.expFalloff;
-noiseSdLowBound = params.noiseSd;
-noiseSdHighBound = params.noiseSd;
+expFalloffLowBound = params(1).expFalloff;
+expFalloffHighBound = params(1).expFalloff;
+noiseSdLowBound = params(1).noiseSd;
+noiseSdHighBound = params(1).noiseSd;
 
 % Pack bounds into vector form of parameters.
 for ii = 1:nIndDirections

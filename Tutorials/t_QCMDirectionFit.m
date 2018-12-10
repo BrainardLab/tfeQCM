@@ -80,14 +80,14 @@ else
     nContrastsPerDirection = length(contrastsInEachDirection);
     
     % Specify the directions, which must each have unit length.
-    uniqueDirections = [ [1 0]',  [1 1]',  [0 1]', [1 -1]' ];
-    for ii = 1:size(uniqueDirections,2)
-        uniqueDirections(:,ii) = uniqueDirections(:,ii)/norm(uniqueDirections(:,ii));
+    indDirections = [ [1 0]',  [1 1]',  [0 1]', [1 -1]' ];
+    for ii = 1:size(indDirections,2)
+        indDirections(:,ii) = indDirections(:,ii)/norm(indDirections(:,ii));
     end
-    nUniqueDirections = size(uniqueDirections,2);
+    nUniqueDirections = size(indDirections,2);
     
     % Construct the contrasts crossed with directions set of stimuli
-    stimuli = kron(uniqueDirections',contrastsInEachDirection')';
+    stimuli = kron(indDirections',contrastsInEachDirection')';
     numStim = size(stimuli,2);
     
     % Get directions/contrasts format from stimuli, for later use
@@ -207,7 +207,7 @@ if (~RANDOM_STIMULI)
     whichDirection = 2;
     
     % Pull out this direction and simulated responses
-    theDirection = uniqueDirections(:,whichDirection);
+    theDirection = indDirections(:,whichDirection);
     directionResponses = QCMResponsesByHand(nContrastsPerDirection*(whichDirection-1)+1:nContrastsPerDirection*whichDirection);
     maxResponse = max(directionResponses);
     
@@ -291,6 +291,21 @@ if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
         plotContrasts = linspace(0,max(indDirectionContrasts{ii}),100);
         plotPredictionsCommon = ComputeNakaRushton([indDirectionNRParamsCommon(ii).crfAmp,indDirectionNRParamsCommon(ii).crfSemi,indDirectionNRParamsCommon(ii).crfExponent],plotContrasts) + indDirectionNRParamsCommon(ii).crfOffset;
         plot(plotContrasts,plotPredictionsCommon,'g','LineWidth',2);
+    end
+    
+    % Now try with the tfeNakeRushtonDirection object.  Because we fit the
+    % NR to noise free responses that were in turn generated with an NR in
+    % each direction, we should get pretty much the same responses in
+    % order, as we put in.
+    for ii = 1:length(indDirectionDirections)     
+        indDirections(:,ii) = indDirectionDirections{ii};
+    end
+    stimulusStruct.values = [stimDirections ; stimContrasts];
+    stimulusStruct.timebase = 1:size(stimulusStruct.values,2);
+    NRObj = tfeNakaRushtonDirection(indDirections);
+    objResponses = NRObj.computeResponse(indDirectionNRParamsCommon,stimulusStruct,[]);
+    if (max(abs(QCMResponsesByHand-objResponses.values)/max(QCMResponsesByHand)) > 1e-6)
+        error('tfeNakaRushtonDirection object computeResponse method does not give right answer');
     end
     
 end

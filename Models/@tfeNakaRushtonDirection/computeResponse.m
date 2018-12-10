@@ -33,59 +33,70 @@ end
 
 %% Figure out passed directions and make sure they match up with directions
 % this was initialized with.
-
-[indDirectionsTemp,~,whichColumnsOut] = unique(stimulusStruct.values','rows','stable');  % uniquetol(directions',unique_tolerance,'ByRows',true);
+[indDirectionsTemp,~,whichColumnsOut] = unique(directions','rows','stable');  % uniquetol(directions',unique_tolerance,'ByRows',true);
 indDirectionsTemp = indDirectionsTemp';
 nIndDirections = size(indDirectionsTemp,2);
-if (nIndDirections > obj.nDirections)
-    error('Passed stimuli with more directions than we know about');
+if (nIndDirections ~= obj.nDirections)
+    error('Passed stimulus array does not have same number of directions as object');
+end
+
+%% Check on parameters
+for ii = 1:nIndDirections
+    if (params(ii).noiseSd ~= params(1).noiseSd)
+        error('Noise sd parameter not matched across directions in parameters struct array');
+    end
+    if (params(ii).expFalloff ~= params(1).expFalloff)
+        error('Exp falloff parameter not matched across directions in parameters struct array');
+    end
 end
 
 %% Match up directions found in stimuli with those that we have from initializtion
 objDirectionIndices = zeros(nIndDirections,1);
 for ii = 1:nIndDirections
     for jj = 1:obj.nDirections
-        if (max(abs(indDirectionsTemp(:,ii) - obj.directions(jj,:))) < 1e-10)
-            indDirectionsIntoObjDirectionsIndices(ii) = jj;
+        if (max(abs(indDirectionsTemp(:,ii) - obj.directions(:,jj))) < 1e-10)
+            objDirectionIndices(ii) = jj;
         end
     end
 end
 if (any(objDirectionIndices == 0))
-    error('Passed stimulus direciton not in set of directions we know about');
+    error('A passed stimulus direction is not in set of directions we know about');
+end
+checkIndices = unique(objDirectionIndices);
+if (length(checkIndices) ~= obj.nDirections)
+    error('One direction in object set not in passed stimulus array')
 end
 
-%% Working here.  Each direction in object must be in stimulus and vice
-% versa. Check this a bit more here.
-
-%% Parse stimuli in terms of which stimulus belongs to which direction, and
-% match up order with parameters for initialized directions
-for ii = 1:nIndDirections
-    whichColumns = find(whichColumnsOut == ii);
-    indDirectionIndices{ii} = whichColumns;
-    indDirectionResponses{ii} = responses(whichColumns);
-    indDirectionDirections{ii} = indDirectionsTemp(:,ii);
-    indDirectionContrasts{ii} = contrasts(whichColumns);
-end
-
-%% What I want to do is replace the code below with a call to the tfeQCM method.
-% But I get an error about no matching signature when I try that. So for
-% now just doing the same calculation here.
+%% Parse stimuli in terms of which stimulus belongs to which direction
 %
-% neuralResponse = computeResponse@tfeQCM(params,stimuli);
+% Match up order with parameters for initialized directions
+for ii = 1:nIndDirections
+    theDirection = objDirectionIndices(ii);
+    whichColumns{ii} = find(whichColumnsOut == ii);
+    indDirectionIndices{theDirection} = whichColumns{ii};
+    indDirectionDirections{theDirection} = indDirectionsTemp(:,ii);
+    indDirectionContrasts{theDirection} = contrasts(whichColumns{ii});
+end
 
-%% Get neural response from QCM model
-neuralResponse = tfeQCMForward(params,stimuli);
+%% Get neural response from NR forward model
+neuralResponseCell = tfeNRForward(params,indDirectionContrasts);
+
+% Convert cell array for each direction back into form that matches passed
+% input.
+for ii = 1:nIndDirections
+    neuralResponse(whichColumns{ii}) = neuralResponseCell{ii};
+end
 
 %% Make the neural response structure
 modelResponseStruct.timebase = stimulusStruct.timebase;
 modelResponseStruct.values = neuralResponse;
 
-%% Optionally, convolve with a passed kernel
+%% Optional, convolve with a passed kernel
 modelResponseStruct = obj.applyKernel(modelResponseStruct,kernelStruct,varargin{:});
 
-%% Optional add noise
+%% Optional, add noise
 if (p.Results.addNoise)
-    modelResponseStruct.values = modelResponseStruct.values + normrnd(0,params.noiseSd,size(modelResponseStruct.values));
+    modelResponseStruct.values = modelResponseStruct.values + normrnd(0,params(1).noiseSd,size(modelResponseStruct.values));
 end
 
 
