@@ -21,7 +21,7 @@ function responses = tfeNRForward(NRParams,contrasts)
 %    responses      - Cell array of responses. Responses are in row vectors
 %                     for each cell entry.
 %
-% See also:
+% See also: tfeNakaRushtonDirection
 %
 
 % History:

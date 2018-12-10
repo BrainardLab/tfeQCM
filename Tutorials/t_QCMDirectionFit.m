@@ -1,5 +1,5 @@
 % Test the QCM fitting when the design involves explict directions
-
+%
 % Description:
 %   This script synthesizes data for the QCM model and then fits it,
 %   to ensure that we can get back what we put in.  Etc. It also
@@ -8,7 +8,7 @@
 % 
 %   Note that this is developed for the two-dimensional (ellipse) version.
 % 
-%   NOTE: When we get to ellipses, we need to remember to put a constraint into the
+%   Note that when we get to ellipses, we need to remember to put a constraint into the
 %   fitting that keeps the length of the third axis smaller than the second.
 %
 
