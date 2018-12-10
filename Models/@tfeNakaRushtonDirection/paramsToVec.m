@@ -11,9 +11,8 @@ function x = paramsToVec(obj,params,varargin)
 p = inputParser; p.KeepUnmatched = true;
 p.addRequired('params',@isstruct);
 p.parse(params,varargin{:});
-params = p.Results.params;
 
 % Do it
-paramsvec = tfeNRParamsToVec(NRParams);
+x = tfeNRParamsToVec(params);
 
 end

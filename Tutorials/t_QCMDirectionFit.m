@@ -267,7 +267,7 @@ if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
     % Fit with things common across directions
     [indDirectionNRParamsCommon] = ...
         tfeQCMFitNakaRushtonDirectionsContrasts(QCMResponsesByHand,stimDirections,stimContrasts,...
-        'lockOffsetToZero',false,'commonAmp',true,'commonSemi',false,'commonExp',true,'commonOffset',true);
+        'lockOffsetToZero',NOOFFSET,'commonAmp',true,'commonSemi',false,'commonExp',true,'commonOffset',true);
     
     % Make plot of the individual contrast-response functions and fits
     figure; clf;
@@ -299,11 +299,13 @@ if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
     % order, as we put in.
     stimulusStruct.values = [stimDirections ; stimContrasts];
     stimulusStruct.timebase = 1:size(stimulusStruct.values,2);
-    NRObj = tfeNakaRushtonDirection(indDirectionDirections);
-    objResponses = NRObj.computeResponse(indDirectionNRParamsCommon,stimulusStruct,[]);
+    NRDirectionObj = tfeNakaRushtonDirection(indDirectionDirections, ...
+        'lockOffsetToZero',NOOFFSET,'commonAmp',true,'commonSemi',false,'commonExp',true,'commonOffset',true);
+    objResponses = NRDirectionObj.computeResponse(indDirectionNRParamsCommon,stimulusStruct,[]);
     if (max(abs(QCMResponsesByHand-objResponses.values)/max(QCMResponsesByHand)) > 1e-6)
         error('tfeNakaRushtonDirection object computeResponse method does not give right answer');
     end
+    [fitNRDirectionParams,~,fitNRDirectionResponseStruct] = NRDirectionObj.fitResponse(theDirectionPacket);
     
 end
 

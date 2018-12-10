@@ -53,7 +53,7 @@ classdef tfeQCM < tfe
             % Parse input. Need to add any key/value pairs that need to go
             % to the tfe parent class, as well as any that are QCM
             % specific.
-            p = inputParser;
+            p = inputParser; p.KeepUnmatched = true;
             p.addParameter('verbosity','none',@ischar);
             p.addParameter('dimension',3,@(x) (isnumeric(x) & isscalar(x)));
             p.parse(varargin{:});

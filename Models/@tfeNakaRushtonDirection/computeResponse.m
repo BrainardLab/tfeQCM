@@ -42,10 +42,10 @@ end
 
 %% Check on parameters
 for ii = 1:nIndDirections
-    if (params(ii).noiseSd ~= params(1).noiseSd)
+    if (abs(params(ii).noiseSd - params(1).noiseSd) > 1e-6)
         error('Noise sd parameter not matched across directions in parameters struct array');
     end
-    if (params(ii).expFalloff ~= params(1).expFalloff)
+    if (abs(params(ii).expFalloff - params(1).expFalloff) > 1e-6)
         error('Exp falloff parameter not matched across directions in parameters struct array');
     end
 end

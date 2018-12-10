@@ -18,5 +18,3 @@ x = p.Results.x;
 params = tfeNRVecToParams(x,obj.nDirections);
 
 end
-        
-end

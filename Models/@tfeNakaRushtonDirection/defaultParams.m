@@ -58,21 +58,21 @@ noiseSdLowBound = params(1).noiseSd;
 noiseSdHighBound = params(1).noiseSd;
 
 % Pack bounds into vector form of parameters.
-for ii = 1:nIndDirections
-    NRParamsLow(ii).crfAmp = ampLowBound;
-    NRParamsLow(ii).crfSemi = semiLowBound;
-    NRParamsLow(ii).crfExponent = expLowBound;
-    NRParamsLow(ii).crfOffset = offsetLowBound;
-    NRParamsLow(ii).expFalloff = expFalloffLowBound;
-    NRParamsLow(ii).noiseSd = noiseSdLowBound;
+for ii = 1:obj.nDirections
+    paramsLb(ii).crfAmp = ampLowBound;
+    paramsLb(ii).crfSemi = semiLowBound;
+    paramsLb(ii).crfExponent = expLowBound;
+    paramsLb(ii).crfOffset = offsetLowBound;
+    paramsLb(ii).expFalloff = expFalloffLowBound;
+    paramsLb(ii).noiseSd = noiseSdLowBound;
 end
-for ii = 1:nIndDirections
-    NRParamsHigh(ii).crfAmp = ampHighBound;
-    NRParamsHigh(ii).crfSemi = semiHighBound;
-    NRParamsHigh(ii).crfExponent = expHighBound;
-    NRParamsHigh(ii).crfOffset = offsetHighBound;
-    NRParamsHigh(ii).expFalloff = expFalloffHighBound;
-    NRParamsHigh(ii).noiseSd = noiseSdHighBound;
+for ii = 1:obj.nDirections
+    paramsUb(ii).crfAmp = ampHighBound;
+    paramsUb(ii).crfSemi = semiHighBound;
+    paramsUb(ii).crfExponent = expHighBound;
+    paramsUb(ii).crfOffset = offsetHighBound;
+    paramsUb(ii).expFalloff = expFalloffHighBound;
+    paramsUb(ii).noiseSd = noiseSdHighBound;
 end
 
 end
