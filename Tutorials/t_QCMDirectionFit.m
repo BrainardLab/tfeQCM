@@ -19,6 +19,7 @@
 %                       locking of parameters across directions.
 %   12/8/18   dhb       Start so can make tfe objects for the various NR
 %                       fits
+%   12/10/18  dhb       tfeNakaRushtonDirection object working.
 
 %% Initialize
 clear; close all
@@ -265,33 +266,13 @@ if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
     end
     
     % Fit with things common across directions
+    commonAmp = true;
+    commonSemi = false;
+    commonExp = true;
+    commonOffset = true;
     [indDirectionNRParamsCommon] = ...
         tfeQCMFitNakaRushtonDirectionsContrasts(QCMResponsesByHand,stimDirections,stimContrasts,...
-        'lockOffsetToZero',NOOFFSET,'commonAmp',true,'commonSemi',false,'commonExp',true,'commonOffset',true);
-    
-    % Make plot of the individual contrast-response functions and fits
-    figure; clf;
-    for ii = 1:nIndDirections
-        subplot(nIndDirections,1,ii); hold on;
-        
-        % Dump parameters from independent fits
-        fprintf('Parameters for independent direction %d, independent fit\n',ii);
-        indDirectionNRParams(ii)
-        fprintf('\n');
-        
-        % Plot simulated data
-        plot(indDirectionContrasts{ii},indDirectionResponses{ii},'ro','MarkerFaceColor','r','MarkerSize',12);
-        
-        % Compute and plot predicted functions
-        plotContrasts = linspace(0,max(indDirectionContrasts{ii}),100);
-        plotPredictions = ComputeNakaRushton([indDirectionNRParams(ii).crfAmp,indDirectionNRParams(ii).crfSemi,indDirectionNRParams(ii).crfExponent],plotContrasts) + indDirectionNRParams(ii).crfOffset;
-        plot(plotContrasts,plotPredictions,'b','LineWidth',4);
-        
-        % Compute and plot predicted functions, common amplitude
-        plotContrasts = linspace(0,max(indDirectionContrasts{ii}),100);
-        plotPredictionsCommon = ComputeNakaRushton([indDirectionNRParamsCommon(ii).crfAmp,indDirectionNRParamsCommon(ii).crfSemi,indDirectionNRParamsCommon(ii).crfExponent],plotContrasts) + indDirectionNRParamsCommon(ii).crfOffset;
-        plot(plotContrasts,plotPredictionsCommon,'g','LineWidth',2);
-    end
+        'lockOffsetToZero',NOOFFSET,'commonAmp',commonAmp,'commonSemi',commonSemi,'commonExp',commonExp,'commonOffset',commonOffset);
     
     % Now try with the tfeNakeRushtonDirection object.  Because we fit the
     % NR to noise free responses that were in turn generated with an NR in
@@ -300,12 +281,47 @@ if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
     stimulusStruct.values = [stimDirections ; stimContrasts];
     stimulusStruct.timebase = 1:size(stimulusStruct.values,2);
     NRDirectionObj = tfeNakaRushtonDirection(indDirectionDirections, ...
-        'lockOffsetToZero',NOOFFSET,'commonAmp',true,'commonSemi',false,'commonExp',true,'commonOffset',true);
+        'lockOffsetToZero',NOOFFSET,'commonAmp',commonAmp,'commonSemi',commonSemi,'commonExp',commonExp,'commonOffset',commonOffset);
     objResponses = NRDirectionObj.computeResponse(indDirectionNRParamsCommon,stimulusStruct,[]);
     if (max(abs(QCMResponsesByHand-objResponses.values)/max(QCMResponsesByHand)) > 1e-6)
         error('tfeNakaRushtonDirection object computeResponse method does not give right answer');
     end
-    [fitNRDirectionParams,~,fitNRDirectionResponseStruct] = NRDirectionObj.fitResponse(theDirectionPacket);
+    [fitNRDirectionParams,~,objFitResponses] = NRDirectionObj.fitResponse(theDirectionPacket);
+    if (max(abs(QCMResponsesByHand-objFitResponses.values)/max(QCMResponsesByHand)) > 0.02)
+        error('tfeNakaRushtonDirection object fitResponse method does not give right answer');
+    end
     
+    % Make plot of the individual contrast-response functions and fits
+    figure; clf;
+    for ii = 1:nIndDirections
+        subplot(nIndDirections,1,ii); hold on;
+        
+        % Dump parameters from common fits obtained two ways
+        % fprintf('Parameters for independent direction %d, common fit\n',ii);
+        % indDirectionNRParamsCommon(ii)
+        % fitNRDirectionParams(ii)
+        % fprintf('\n');
+        
+        % Plot simulated data
+        plot(indDirectionContrasts{ii},indDirectionResponses{ii},'ro','MarkerFaceColor','r','MarkerSize',12);
+        
+        % Compute and plot predicted functions
+        plotContrasts = linspace(0,max(indDirectionContrasts{ii}),100);
+        plotPredictions =  ...
+            tfeQCMComputeNakaRushton(plotContrasts,indDirectionNRParams(ii).crfSemi,indDirectionNRParams(ii).crfExponent,indDirectionNRParams(ii).crfAmp,indDirectionNRParams(ii).crfOffset);
+        plot(plotContrasts,plotPredictions,'b','LineWidth',4);
+        
+        % Compute and plot predicted functions, common amplitude
+        plotContrasts = linspace(0,max(indDirectionContrasts{ii}),100);
+        plotPredictionsCommon = ...
+            tfeQCMComputeNakaRushton(plotContrasts,indDirectionNRParamsCommon(ii).crfSemi,indDirectionNRParamsCommon(ii).crfExponent,indDirectionNRParamsCommon(ii).crfAmp,indDirectionNRParamsCommon(ii).crfOffset);
+        plot(plotContrasts,plotPredictionsCommon,'g','LineWidth',3);
+        
+        % Compute and plot predicted functions, common amplitude
+        plotContrasts = linspace(0,max(indDirectionContrasts{ii}),100);
+        plotPredictionsCommon = ...
+            tfeQCMComputeNakaRushton(plotContrasts,fitNRDirectionParams(ii).crfSemi,fitNRDirectionParams(ii).crfExponent,fitNRDirectionParams(ii).crfAmp,fitNRDirectionParams(ii).crfOffset);
+        plot(plotContrasts,plotPredictionsCommon,'r','LineWidth',2);
+    end
 end
 
