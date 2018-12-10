@@ -22,7 +22,7 @@ function response = tfeQCMComputeNakaRushton(contrastSupport,K,n,Rmax,offset)
 %   offset           - Function amplitude offset.
 %
 % Outputs: 
-%   response         = Simulated response to the contrast values.
+%   response         = Response to the contrast values.
 %
 % See also: ComputeNakaRushton, InvertNakaRushton
 
