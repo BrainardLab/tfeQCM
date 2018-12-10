@@ -32,7 +32,8 @@ function [indDirectionNRParams,indDirectionPredictions,indDirectionResponses,ind
 %      indDirectionNRParams    - Struct array. The Naka-Rushton parameters for each direction.
 %      indDirectionPredictions - Cell array. The predictions of responses for each direction.
 %      indDirectionResponses   - Cell array. The responses for each direction.
-%      indDirectionDirections  - Cell array. The direction for each direction.
+%      indDirectionDirections  - Array. The unique directions are in the
+%                                columns of this array.
 %      indDirectionContrasts   - Cell array. The contrasts for each direction.
 %      indDirectionIndices     - Cell array. For each direction, the
 %                                indices into the input data corresponding to that
@@ -70,15 +71,11 @@ unique_tolerance = 1e-6;
 % The commented out call to uniquetol is almost good, but scrambles the
 % order of the unique outputs.  One could fix that with a little work, if
 % tolerance turns out to be an issue.
-[indDirectionsTemp,~,whichColumnsOut] = unique(directions','rows','stable');  % uniquetol(directions',unique_tolerance,'ByRows',true);
-indDirectionsTemp = indDirectionsTemp';
-nIndDirections = size(indDirectionsTemp,2);
+[indDirectionDirections,indDirectionIndices] = tfeQCMParseDirections(directions);
+nIndDirections = size(indDirectionDirections,2);
 for ii = 1:nIndDirections
-    whichColumns = find(whichColumnsOut == ii);
-    indDirectionIndices{ii} = whichColumns;
-    indDirectionResponses{ii} = responses(whichColumns);
-    indDirectionDirections{ii} = indDirectionsTemp(:,ii);
-    indDirectionContrasts{ii} = contrasts(whichColumns);
+    indDirectionResponses{ii} = responses(indDirectionIndices{ii});
+    indDirectionContrasts{ii} = contrasts(indDirectionIndices{ii});
 end
 
 %% Initialize parameters
@@ -198,16 +195,16 @@ end
 options = optimset;
 options = optimset(options,'Diagnostics','off','Display','off');
 options = optimset(options,'LargeScale','off');
-indDirectionParamsvec = fmincon(@(x)FitIndNakaRushtonFun(x,indDirectionResponses,indDirectionDirections,indDirectionContrasts,nIndDirections), ...
+indDirectionParamsvec = fmincon(@(x)FitIndNakaRushtonFun(x,indDirectionResponses,indDirectionContrasts,nIndDirections), ...
     indDirectionParamsvec0,[],[],Aeq,beq,vlb,vub,[],options); 
 
-[~,indDirectionPredictions] = FitIndNakaRushtonFun(indDirectionParamsvec,indDirectionResponses,indDirectionDirections,indDirectionContrasts,nIndDirections);
+[~,indDirectionPredictions] = FitIndNakaRushtonFun(indDirectionParamsvec,indDirectionResponses,indDirectionContrasts,nIndDirections);
 indDirectionNRParams = tfeNRVecToParams(indDirectionParamsvec,nIndDirections);
 
 
 end
 
-function [f,indDirectionPredictions] = FitIndNakaRushtonFun(paramsvec,indDirectionResponses,indDirectionDirections,indDirectionContrasts,nIndDirections)
+function [f,indDirectionPredictions] = FitIndNakaRushtonFun(paramsvec,indDirectionResponses,indDirectionContrasts,nIndDirections)
 
 % Initialize error message
 f = 0;

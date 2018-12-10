@@ -80,14 +80,14 @@ else
     nContrastsPerDirection = length(contrastsInEachDirection);
     
     % Specify the directions, which must each have unit length.
-    indDirections = [ [1 0]',  [1 1]',  [0 1]', [1 -1]' ];
-    for ii = 1:size(indDirections,2)
-        indDirections(:,ii) = indDirections(:,ii)/norm(indDirections(:,ii));
+    indDirectionDirections = [ [1 0]',  [1 1]',  [0 1]', [1 -1]' ];
+    for ii = 1:size(indDirectionDirections,2)
+        indDirectionDirections(:,ii) = indDirectionDirections(:,ii)/norm(indDirectionDirections(:,ii));
     end
-    nUniqueDirections = size(indDirections,2);
+    nUniqueDirections = size(indDirectionDirections,2);
     
     % Construct the contrasts crossed with directions set of stimuli
-    stimuli = kron(indDirections',contrastsInEachDirection')';
+    stimuli = kron(indDirectionDirections',contrastsInEachDirection')';
     numStim = size(stimuli,2);
     
     % Get directions/contrasts format from stimuli, for later use
@@ -207,7 +207,7 @@ if (~RANDOM_STIMULI)
     whichDirection = 2;
     
     % Pull out this direction and simulated responses
-    theDirection = indDirections(:,whichDirection);
+    theDirection = indDirectionDirections(:,whichDirection);
     directionResponses = QCMResponsesByHand(nContrastsPerDirection*(whichDirection-1)+1:nContrastsPerDirection*whichDirection);
     maxResponse = max(directionResponses);
     
@@ -248,7 +248,7 @@ if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
     end
     for ii = 1:nIndDirections
         for jj = 1:length(indDirectionIndices{ii})
-            if (max(abs(stimDirections(:,inputCounter)-indDirectionDirections{ii})) > 1e-7)
+            if (max(abs(stimDirections(:,inputCounter)-indDirectionDirections(:,ii))) > 1e-7)
                 error('Did not properly recover stimulus directions from stimulus description');
             end
             if (QCMResponsesByHand(inputCounter) ~= indDirectionResponses{ii}(jj))
@@ -297,12 +297,9 @@ if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
     % NR to noise free responses that were in turn generated with an NR in
     % each direction, we should get pretty much the same responses in
     % order, as we put in.
-    for ii = 1:length(indDirectionDirections)     
-        indDirections(:,ii) = indDirectionDirections{ii};
-    end
     stimulusStruct.values = [stimDirections ; stimContrasts];
     stimulusStruct.timebase = 1:size(stimulusStruct.values,2);
-    NRObj = tfeNakaRushtonDirection(indDirections);
+    NRObj = tfeNakaRushtonDirection(indDirectionDirections);
     objResponses = NRObj.computeResponse(indDirectionNRParamsCommon,stimulusStruct,[]);
     if (max(abs(QCMResponsesByHand-objResponses.values)/max(QCMResponsesByHand)) > 1e-6)
         error('tfeNakaRushtonDirection object computeResponse method does not give right answer');
