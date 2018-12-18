@@ -31,7 +31,6 @@ function [uniqueDirections,directionIndices] = tfeQCMParseDirections(directions)
 % History:
 %   12/10/18  dhb  Pulled out into function of its own
 
-
 %% Parse the stimuli into indDirections, contrasts and responses for each individual direction
 % 
 % The commented out call to uniquetol is almost good, but scrambles the

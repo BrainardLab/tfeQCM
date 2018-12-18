@@ -84,7 +84,7 @@ neuralResponseCell = tfeNRForward(params,indDirectionContrasts);
 % Convert cell array for each direction back into form that matches passed
 % input.
 for ii = 1:nIndDirections
-    neuralResponse(whichColumns{ii}) = neuralResponseCell{ii};
+    neuralResponse(indDirectionIndices{ii}) = neuralResponseCell{ii};
 end
 
 %% Make the neural response structure
