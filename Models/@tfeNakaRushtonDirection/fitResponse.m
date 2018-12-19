@@ -60,10 +60,10 @@ else
     for ii = 1:length(NRParams0)
         NRParams0(ii).crfOffset = minResponseValue;
     end
-    % offsetLowBound = -ampHighBound;
-    % offsetHighBound = ampHighBound;
-    offsetLowBound = minResponseValue;
-    offsetHighBound = minResponseValue;
+    offsetLowBound = -ampHighBound;
+    offsetHighBound = ampHighBound;
+    %offsetLowBound = minResponseValue;
+    %offsetHighBound = minResponseValue;
 end
 
 % Pack bounds into vector form of parameters.
