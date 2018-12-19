@@ -1,5 +1,5 @@
-function [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargin)
-% [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargin)
+function [NRParams,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargin)
+% [NRParams,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargin)
 %
 % Fit method for the tfeNakaRushtonDirection class.  This overrides the tfeQCM
 % method, which we need to do because that is the direct parent class of
@@ -9,7 +9,7 @@ function [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,vararg
 %   thePacket          - A valid packet
 %
 % Outputs:
-%   paramsFit          - Fit parameters
+%   NRParams           - Fit parameters
 %   fVal               - Fit error.
 %   predictedResponse  - Response predicted from fit
 %
@@ -42,23 +42,28 @@ else
 end
 
 %% Set initial values and reasonable bounds on parameters
-[indDirectionNRParams0,NRParamsLow,NRParamsHigh] = obj.defaultParams('defaultParamsInfo',p.Results.defaultParamsInfo,'defaultParams',p.Results.defaultParams,varargin{:});
-paramsFitVec0 = obj.paramsToVec(indDirectionNRParams0);
+[NRParams0,NRParamsLow,NRParamsHigh] = obj.defaultParams('defaultParamsInfo',p.Results.defaultParamsInfo,'defaultParams',p.Results.defaultParams,varargin{:});
 
 %% Set up search bounds
-ampLowBound = -5; ampHighBound = 5;
-semiLowBound = 0.01; semiHighBound = 10;
+ampLowBound = 0; ampHighBound = 5;
+semiLowBound = 0.005; semiHighBound = 10;
 expLowBound = 0.01; expHighBound = 10;
-expFalloffLowBound = indDirectionNRParams0.expFalloff;
-expFalloffHighBound = indDirectionNRParams0.expFalloff;
-noiseSdLowBound = indDirectionNRParams0.noiseSd;
-noiseSdHighBound = indDirectionNRParams0.noiseSd;
+expFalloffLowBound = NRParams0.expFalloff;
+expFalloffHighBound = NRParams0.expFalloff;
+noiseSdLowBound = NRParams0.noiseSd;
+noiseSdHighBound = NRParams0.noiseSd;
 if (obj.lockOffsetToZero)
     offsetLowBound = 0;
     offsetHighBound = 0;
 else
-    offsetLowBound = -ampHighBound;
-    offsetHighBound = ampHighBound;
+    minResponseValue = min(thePacket.response.values);
+    for ii = 1:length(NRParams0)
+        NRParams0(ii).crfOffset = minResponseValue;
+    end
+    % offsetLowBound = -ampHighBound;
+    % offsetHighBound = ampHighBound;
+    offsetLowBound = minResponseValue;
+    offsetHighBound = minResponseValue;
 end
 
 % Pack bounds into vector form of parameters.
@@ -70,7 +75,6 @@ for ii = 1:obj.nDirections
     NRParamsLow(ii).expFalloff = expFalloffLowBound;
     NRParamsLow(ii).noiseSd = noiseSdLowBound;
 end
-vlb = obj.paramsToVec(NRParamsLow);
 for ii = 1:obj.nDirections
     NRParamsHigh(ii).crfAmp = ampHighBound;
     NRParamsHigh(ii).crfSemi = semiHighBound;
@@ -79,7 +83,12 @@ for ii = 1:obj.nDirections
     NRParamsHigh(ii).expFalloff = expFalloffHighBound;
     NRParamsHigh(ii).noiseSd = noiseSdHighBound;
 end
-vub = obj.paramsToVec(NRParamsHigh);
+
+%% Set initial parameters and bounds into vector form
+paramsVec0 = obj.paramsToVec(NRParams0);
+vlbVec = obj.paramsToVec(NRParamsLow);
+vubVec = obj.paramsToVec(NRParamsHigh);
+
 
 %% Set up linear parameter constraints
 %
@@ -168,7 +177,7 @@ if ~isempty(p.Results.DiffMinChange)
     options = optimset(options,'DiffMinChange',p.Results.DiffMinChange);
 end
 paramsFitVec = fmincon(@(modelParamsVec)obj.fitError(modelParamsVec, ...
-    thePacket),paramsFitVec0,[],[],Aeq,beq,vlb,vub,[],options);
+    thePacket),paramsVec0,[],[],Aeq,beq,vlbVec,vubVec,[],options);
 
 % Get error and predicted response for final parameters
 [fVal,modelResponseStruct] = obj.fitError(paramsFitVec,thePacket,'errorType',p.Results.errorType);
@@ -181,7 +190,7 @@ switch (obj.verbosity)
 end
 
 % Convert fit parameters for return
-paramsFit = obj.vecToParams(paramsFitVec);
+NRParams = obj.vecToParams(paramsFitVec);
 
 end
         
