@@ -175,7 +175,7 @@ if (~RANDOM_STIMULI)
     directionStimulusStruct.values(1:theDimension,:) = stimDirections;
     directionStimulusStruct.values(theDimension+1,:) = stimContrasts;
     QCMDirectionResponseStruct = QCMDirectionObj.computeResponse(paramsQCM,directionStimulusStruct,[],'AddNoise',false);
-    if (max(abs(QCMDirectionResponseStruct.values-QCMResponseStruct.values)/max(QCMResponseStruct.values(:))) > 1e-8)
+    if (max(abs(QCMDirectionResponseStruct.values-QCMResponseStruct.values)/max(QCMResponseStruct.values(:))) > 1e-5)
         error('Direction and direct QCM objects do not compute same responses');
     end
     
@@ -185,7 +185,7 @@ if (~RANDOM_STIMULI)
     [fitQCMDirectionParams,fVal,fitQCMDirectionResponseStruct] = QCMDirectionObj.fitResponse(theDirectionPacket,'defaultParamsInfo',defaultParamsInfo);
     fprintf('\nQCM parameters from direction fit:\n');
     QCMDirectionObj.paramPrint(fitQCMDirectionParams)
-    if (max(abs(fitQCMDirectionResponseStruct.values-fitQCMResponseStruct.values)/max(fitQCMResponseStruct.values(:))) > 1e-8)
+    if (max(abs(fitQCMDirectionResponseStruct.values-fitQCMResponseStruct.values)/max(fitQCMResponseStruct.values(:))) > 1e-5)
         error('Direction and direct QCM objects do not fit the same');
     end
 end
