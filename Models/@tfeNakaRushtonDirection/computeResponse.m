@@ -33,8 +33,7 @@ end
 
 %% Figure out passed directions and make sure they match up with directions
 % this was initialized with.
-[indDirectionsTemp,~,whichColumnsOut] = unique(directions','rows','stable');  % uniquetol(directions',unique_tolerance,'ByRows',true);
-indDirectionsTemp = indDirectionsTemp';
+[indDirectionsTemp,directionIndices] = tfeQCMParseDirections(directions);
 nIndDirections = size(indDirectionsTemp,2);
 if (nIndDirections ~= obj.nDirections)
     error('Passed stimulus array does not have same number of directions as object');
@@ -72,10 +71,9 @@ end
 % Match up order with parameters for initialized directions
 for ii = 1:nIndDirections
     theDirection = objDirectionIndices(ii);
-    whichColumns{ii} = find(whichColumnsOut == ii);
-    indDirectionIndices{theDirection} = whichColumns{ii};
+    indDirectionIndices{theDirection} = directionIndices{ii};
     indDirectionDirections{theDirection} = indDirectionsTemp(:,ii);
-    indDirectionContrasts{theDirection} = contrasts(whichColumns{ii});
+    indDirectionContrasts{theDirection} = contrasts(directionIndices{ii});
 end
 
 %% Get neural response from NR forward model

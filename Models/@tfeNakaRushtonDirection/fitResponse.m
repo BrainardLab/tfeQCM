@@ -1,9 +1,13 @@
 function [NRParams,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargin)
-% [NRParams,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargin)
+% Fit method for the tfeNakaRushtonDirection class.
 %
-% Fit method for the tfeNakaRushtonDirection class.  This overrides the tfeQCM
-% method, which we need to do because that is the direct parent class of
-% tfeNakaRushtonDirection.
+% Syntax:
+%     [NRParams,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargin)
+%
+% Descriptoin:
+%     This is a custom fit method because this object allows us to impose
+%     various constraints on the parameters across directions, and those
+%     are not implemented in the standard fit method of tfe or tfeQCM.
 %
 % Inputs:
 %   thePacket          - A valid packet
@@ -14,7 +18,11 @@ function [NRParams,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargi
 %   predictedResponse  - Response predicted from fit
 %
 % Optional key/value pairs
-%   See tfe.fitResponse for these.
+%  'defaultParamsInfo'    - Struct (default empty).  This is passed to the
+%                           defaultParams method.
+%  'defaultParams'        - Struct (default empty). Params values for
+%                           defaultParams to return. In turn determines
+%                           starting value for search.
 
 %% Parse vargin for options passed here
 %
@@ -25,10 +33,6 @@ p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
 p.addRequired('thePacket',@isstruct);
 p.addParameter('defaultParamsInfo',[],@(x)(isempty(x) | isstruct(x)));
 p.addParameter('defaultParams',[],@(x)(isempty(x) | isstruct(x)));
-p.addParameter('searchMethod','fmincon',@ischar);
-p.addParameter('DiffMinChange',[],@isnumeric);
-p.addParameter('fminconAlgorithm','active-set',@ischar);
-p.addParameter('errorType','rmse',@ischar);
 p.parse(thePacket,varargin{:});
 
 %% Check packet validity
@@ -53,17 +57,24 @@ expFalloffHighBound = NRParams0.expFalloff;
 noiseSdLowBound = NRParams0.noiseSd;
 noiseSdHighBound = NRParams0.noiseSd;
 if (obj.lockOffsetToZero)
-    offsetLowBound = 0;
-    offsetHighBound = 0;
+    % Lock initial value and bounds for offset to zero.
+    NRParams0.crfOffset = 0;
+    offsetLowBound = NRParams0.crfOffset;
+    offsetHighBound = NRParams0.crfOffset;;
 else
-    minResponseValue = min(thePacket.response.values);
-    for ii = 1:length(NRParams0)
-        NRParams0(ii).crfOffset = minResponseValue;
-    end
+    % The commented out code sets the initial value
+    % for the offset to the minimum response. Might
+    % be a good idea, but not sure and am leaving it
+    % commented out for right now.  Putting it in breaks
+    % t_QCMDirectionFit unless you do the same thing in
+    % routine tveQCMFitNakaRushtonDirectionsContrasts.
+    %
+    % minResponseValue = min(thePacket.response.values); 
+    % NRParams0.crfOffset = minResponseValue;
+     
+    % Standard bounds on offset
     offsetLowBound = -ampHighBound;
     offsetHighBound = ampHighBound;
-    %offsetLowBound = minResponseValue;
-    %offsetHighBound = minResponseValue;
 end
 
 % Pack bounds into vector form of parameters.
@@ -171,16 +182,16 @@ end
 
 %% fmincon fit
 options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display','iter','LargeScale','off','Algorithm',p.Results.fminconAlgorithm);
-options = optimset(options,'TolCon',1e-3);
-if ~isempty(p.Results.DiffMinChange)
-    options = optimset(options,'DiffMinChange',p.Results.DiffMinChange);
-end
+options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off'); %,'Algorithm',p.Results.fminconAlgorithm);
+%options = optimset(options,'TolCon',1e-3);
+% if ~isempty(p.Results.DiffMinChange)
+%     options = optimset(options,'DiffMinChange',p.Results.DiffMinChange);
+% end
 paramsFitVec = fmincon(@(modelParamsVec)obj.fitError(modelParamsVec, ...
     thePacket),paramsVec0,[],[],Aeq,beq,vlbVec,vubVec,[],options);
 
 % Get error and predicted response for final parameters
-[fVal,modelResponseStruct] = obj.fitError(paramsFitVec,thePacket,'errorType',p.Results.errorType);
+[fVal,modelResponseStruct] = obj.fitError(paramsFitVec,thePacket);
 
 switch (obj.verbosity)
     case 'high'

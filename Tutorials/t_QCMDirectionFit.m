@@ -26,6 +26,7 @@
 
 %% Initialize
 clear; close all
+rng(0);
 
 %% Set up params
 %
@@ -59,7 +60,7 @@ paramsQCM.crfExponent = n;
 paramsQCM.noiseSd = 0.01;
 paramsQCM.crfOffset = offset;
 paramsQCM.expFalloff = 0.3;
-paramsQCM.noiseSd = 0.003;
+paramsQCM.noiseSd = 0.005;
 fprintf('\nSimulated QCM parameters:\n');
 QCMObj.paramPrint(paramsQCM);
 
@@ -160,7 +161,7 @@ QCMObj.paramPrint(fitQCMParams)
 %%  Check that the fit recovers the responses we put in to reasonable approximation
 % This will break if we simulate too much noise
 fitQCMResponseStruct = QCMObj.computeResponse(fitQCMParams,stimulusStruct,[],'addNoise',false);
-if (max(abs(fitQCMResponseStruct.values-QCMResponseStruct.values)/max(QCMResponseStruct.values(:))) > 1e-2)
+if (max(abs(fitQCMResponseStruct.values-QCMResponseStruct.values)/max(QCMResponseStruct.values(:))) > 5e-2)
     error('Fit does not do a good job of recovering responses');
 end
 
@@ -239,7 +240,7 @@ end
 %% Fit Naka-Rushton function to individual directions
 if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
     [indDirectionNRParams,indDirectionPredictions,indDirectionResponses,indDirectionDirections,indDirectionContrasts,indDirectionIndices,nIndDirections] = ...
-        tfeQCMFitNakaRushtonDirectionsContrasts(QCMResponsesByHand,stimDirections,stimContrasts);
+        tfeQCMFitNakaRushtonDirectionsContrasts(QCMNoisyResponseStruct.values,stimDirections,stimContrasts);
     
     % Check that directions, contrasts and responses came out the way they
     % went in. If this isn't right, then the fit parameters we get back are
@@ -255,7 +256,7 @@ if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
             if (max(abs(stimDirections(:,inputCounter)-indDirectionDirections(:,ii))) > 1e-7)
                 error('Did not properly recover stimulus directions from stimulus description');
             end
-            if (QCMResponsesByHand(inputCounter) ~= indDirectionResponses{ii}(jj))
+            if (QCMNoisyResponseStruct.values(inputCounter) ~= indDirectionResponses{ii}(jj))
                 error('Did not properly recover responses for independent directions');
             end
             if (max(abs(contrastsInEachDirection(jj) - indDirectionContrasts{ii}(jj))) > 1e-7)
@@ -274,7 +275,7 @@ if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
     commonExp = true;
     commonOffset = true;
     [indDirectionNRParamsCommon] = ...
-        tfeQCMFitNakaRushtonDirectionsContrasts(QCMResponsesByHand,stimDirections,stimContrasts,...
+        tfeQCMFitNakaRushtonDirectionsContrasts(QCMNoisyResponseStruct.values,stimDirections,stimContrasts,...
         'lockOffsetToZero',NOOFFSET,'commonAmp',commonAmp,'commonSemi',commonSemi,'commonExp',commonExp,'commonOffset',commonOffset);
     
     % Now try with the tfeNakeRushtonDirection object.  Because we fit the
@@ -285,14 +286,24 @@ if (~RANDOM_STIMULI & FIT_NAKARUSHTON)
     stimulusStruct.timebase = 1:size(stimulusStruct.values,2);
     NRDirectionObj = tfeNakaRushtonDirection(indDirectionDirections, ...
         'lockOffsetToZero',NOOFFSET,'commonAmp',commonAmp,'commonSemi',commonSemi,'commonExp',commonExp,'commonOffset',commonOffset);
-    objResponses = NRDirectionObj.computeResponse(indDirectionNRParamsCommon,stimulusStruct,[]);
-    if (max(abs(QCMResponsesByHand-objResponses.values)/max(QCMResponsesByHand)) > 1e-6)
-        error('tfeNakaRushtonDirection object computeResponse method does not give right answer');
+    objResponses = NRDirectionObj.computeResponse(indDirectionNRParams,stimulusStruct,[]);
+    if (max(abs(QCMNoisyResponseStruct.values-objResponses.values)/max(QCMResponsesByHand)) > 0.02)
+        error('tfeNakaRushtonDirection object computeResponse method does not give right enough answer');
     end
     [fitNRDirectionParams,~,objFitResponses] = NRDirectionObj.fitResponse(theDirectionPacket);
-    if (max(abs(QCMResponsesByHand-objFitResponses.values)/max(QCMResponsesByHand)) > 0.02)
+    if (max(abs(QCMNoisyResponseStruct.values-objFitResponses.values)/max(QCMNoisyResponseStruct.values)) > 0.02)
         error('tfeNakaRushtonDirection object fitResponse method does not give right answer');
     end
+    
+    % Parameter print
+    fprintf('*** NR independent fit params\n');
+    NRDirectionObj.paramPrint(indDirectionNRParams);
+    
+    fprintf('*** NR common fit params\n');
+    NRDirectionObj.paramPrint(indDirectionNRParamsCommon);
+
+    fprintf('*** NR object common fit params\n');
+    NRDirectionObj.paramPrint(fitNRDirectionParams);
     
     % Make plot of the individual contrast-response functions and fits
     figure; clf;

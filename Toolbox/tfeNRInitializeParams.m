@@ -33,7 +33,7 @@ function NRParams = tfeNRInitializeParams(nDirections)
 
 % Reasonable defaults
 Rmax = 1;
-sigma = 0.01;
+sigma = 0.05;
 n = 2;
 offset = 0;
 expFalloff = 0.3;

@@ -204,23 +204,20 @@ indDirectionNRParams = tfeNRVecToParams(indDirectionParamsvec,nIndDirections);
 
 end
 
+% This is matched to what the object based error functions do.
 function [f,indDirectionPredictions] = FitIndNakaRushtonFun(paramsvec,indDirectionResponses,indDirectionContrasts,nIndDirections)
-
-% Initialize error message
-f = 0;
 
 % Convert paramsvec to cell array
 NRParams = tfeNRVecToParams(paramsvec,nIndDirections);
 
 % Loop over directions
+diff = [];
 for ii = 1:nIndDirections
     indDirectionPredictions{ii} = ComputeNakaRushton([NRParams(ii).crfAmp,NRParams(ii).crfSemi,NRParams(ii).crfExponent],indDirectionContrasts{ii}) + NRParams(ii).crfOffset;
-    diff = indDirectionResponses{ii}-indDirectionPredictions{ii};
-    f = f + sum(diff.^2);
+    diff = [diff indDirectionResponses{ii}-indDirectionPredictions{ii}];
 end
-
+f = 1000*sqrt(nanmean(diff.^2));
 end
-
 
 
 
