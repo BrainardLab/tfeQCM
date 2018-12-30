@@ -1,4 +1,4 @@
-function [uniqueDirections,directionIndices] = tfeQCMParseDirections(directions)
+function [uniqueDirections,directionIndices] = tfeQCMParseDirections(directions,varargin)
 % Parse a set of directions into unique directions
 %
 % Syntax:
@@ -23,7 +23,8 @@ function [uniqueDirections,directionIndices] = tfeQCMParseDirections(directions)
 %                               columns of the input that match each unique direction.
 %
 % Optional key/value pairs:
-%    None.
+%    'precision'             - Number of places to round directions to.
+%                              Default 4.
 %
 % See also:
 %
@@ -31,14 +32,48 @@ function [uniqueDirections,directionIndices] = tfeQCMParseDirections(directions)
 % History:
 %   12/10/18  dhb  Pulled out into function of its own
 
-%% Parse the stimuli into indDirections, contrasts and responses for each individual direction
-% 
-% The commented out call to uniquetol is almost good, but scrambles the
-% order of the unique outputs.  One could fix that with a little work, if
-% tolerance turns out to be an issue.
-[indDirectionsTemp,~,whichColumnsOut] = unique(directions','rows','stable');  % uniquetol(directions',unique_tolerance,'ByRows',true);
+%% Parse key/value pairs
+p = inputParser; 
+p.addRequired('directions',@isnumeric);
+p.addParameter('precision',4,@isnumeric);
+p.parse(directions,varargin{:});
+
+%% Round directions to some reasonable precision
+directions = round(directions,p.Results.precision);
+
+%% Find zero length stimuli and replace with first non-zero stimulus
+%
+% This has the effect of making sure we don't return a zero vector as
+% a unique direction, and also that we assign an index to each zero vector
+% that points at some direction. This is OK because eventually the contrast
+% of the corresponding stimulus will be at 0 and the correct stimulus will 
+% be synthesized no matter what the direction is.
+zeroIndex = [];
+nonZeroIndex = [];
+for ii = 1:size(directions,2)
+    if (norm(directions(:,ii)) == 0)
+        zeroIndex = [zeroIndex ii];
+    else
+        nonZeroIndex = [nonZeroIndex ii];
+    end
+end
+if (isempty(nonZeroIndex))
+    error('No non-zero directions passed');
+end
+if (~isempty(zeroIndex))
+    for ii = 1:length(zeroIndex)
+        directions(:,zeroIndex(ii)) = directions(:,nonZeroIndex(1));
+    end
+end
+
+%% Parse the stimuli into indDirections
+[indDirectionsTemp,~,whichColumnsOut] = unique(directions','rows','stable');
 indDirectionsTemp = indDirectionsTemp';
 nIndDirections = size(indDirectionsTemp,2);
+
+%% Set up return.
+% Zero length directions in input are arbitrarily assigned to
+% the first direction.
 for ii = 1:nIndDirections
     whichColumns = find(whichColumnsOut == ii);
     directionIndices{ii} = whichColumns;
