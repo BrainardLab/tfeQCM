@@ -157,4 +157,9 @@ for ii = 1:nUniqueDirections
     plotDirection = uniqueDirections(:,ii);
     plotStimulus = tfeQCMDirectionsContrastsToStimuli(plotDirection,criterionContrast);
     plot(plotStimulus(1),plotStimulus(2),'ro','MarkerFaceColor','r','MarkerSize',12);
+    
+    criterionContrast = InvertNakaRushton([commonAmpExpNRParams(ii).crfAmp,commonAmpExpNRParams(ii).crfSemi,commonAmpExpNRParams(ii).crfExponent],criterionResponse-commonAmpExpNRParams(ii).crfOffset);
+    plotDirection = uniqueDirections(:,ii);
+    plotStimulus = tfeQCMDirectionsContrastsToStimuli(plotDirection,criterionContrast);
+    plot(plotStimulus(1),plotStimulus(2),'bo','MarkerFaceColor','b','MarkerSize',12);
 end
