@@ -38,7 +38,7 @@ p.parse(thePacket,varargin{:});
 if (obj.dimension == 2)
     % Fit with standard deafult parameters
     if (isempty(p.Results.defaultParams))
-        defaultParamsVals = defaultParams(obj);
+        defaultParamsVals = obj.defaultParams;
     else
         defaultParamsVals = p.Results.defaultParams;
     end
@@ -57,6 +57,13 @@ if (obj.dimension == 2)
         paramsFit = paramsFit2;
         fVal = fVal2;
         modelResponseStruct = modelResponseStruct2;
+    end
+    
+    % Put angle into canonical range
+    if  (paramsFit.Qvec(2) < -90)
+        paramsFit.Qvec(2) = paramsFit.Qvec(2) + 180;
+    elseif (paramsFit.Qvec(2) > 90)
+        paramsFit.Qvec(2) = paramsFit.Qvec(2) - 180;
     end
 else
      [paramsFit,fVal,modelResponseStruct] = fitResponse@tfe(obj,thePacket,varargin{:});
