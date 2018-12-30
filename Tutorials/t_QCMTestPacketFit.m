@@ -137,4 +137,24 @@ for ii = 1:subRows
     end
 end 
 
-%% Make a plot in ellipse form
+%% Make a plot of QCM fit in contrast form
+%
+% Because of the offset in the data, a criterion response
+% of 0 is reasonable
+criterionResponse = 0;
+ellPlot = figure; clf; hold on
+nTheta = 500;
+circleDirections = UnitCircleGenerate(nTheta);
+[contrasts1,stimuli1] = tfeQCMInvertDirection(QCMParams,circleDirections,criterionResponse);
+figure; hold on
+plot(stimuli1(1,:),stimuli1(2,:),'k','LineWidth',3);
+xlim([-0.3 0.3]); ylim([-0.3 0.3]);
+xlabel('L contrast');
+ylabel('M contrast');
+axis('square');
+for ii = 1:nUniqueDirections
+    criterionContrast = InvertNakaRushton([indNRParams(ii).crfAmp,indNRParams(ii).crfSemi,indNRParams(ii).crfExponent],criterionResponse-indNRParams(ii).crfOffset);
+    plotDirection = uniqueDirections(:,ii);
+    plotStimulus = tfeQCMDirectionsContrastsToStimuli(plotDirection,criterionContrast);
+    plot(plotStimulus(1),plotStimulus(2),'ro','MarkerFaceColor','r','MarkerSize',12);
+end
