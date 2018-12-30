@@ -6,7 +6,7 @@ function [contrasts,stimuli] = tfeQCMInvertDirection(params,directions,response)
 %
 % Description:
 %    Take a unit vector specifying a direction in stimulus space, the
-%    parameters of the QCM model, and a desirec response, and find the
+%    parameters of the QCM model, and a desired response, and find the
 %    contrast that produces that response.  Also returns the corresponding
 %    stimulus.
 %
