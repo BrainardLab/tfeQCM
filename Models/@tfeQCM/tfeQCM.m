@@ -11,6 +11,9 @@ classdef tfeQCM < tfe
 %
 %     Inherits optional key/value pairs from parent class tfe.
 %
+%     NOTE: Locks described under key/value pairs below not yet
+%     implemented.
+%
 % Inputs:
 %    None.
 %

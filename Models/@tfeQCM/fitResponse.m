@@ -36,17 +36,17 @@ p.parse(thePacket,varargin{:});
 
 % Some custom fitting
 if (obj.dimension == 2)
-    % Fit with standard deafult parameters
+    % Get initial parameters
     if (isempty(p.Results.defaultParams))
-        defaultParamsVals = obj.defaultParams;
+        initialParamsVals = obj.defaultParams;
     else
-        defaultParamsVals = p.Results.defaultParams;
+        initialParamsVals = p.Results.defaultParams;
     end
-    [paramsFit1,fVal1,modelResponseStruct1] = fitResponse@tfe(obj,thePacket,varargin{:},'defaultParams',defaultParamsVals);
+    [paramsFit1,fVal1,modelResponseStruct1] = fitResponse@tfe(obj,thePacket,varargin{:},'defaultParams',initialParamsVals);
     
     % Perturb angle by 90 degrees and fit again
-    defaultParamsVals.Qvec(2) = defaultParamsVals.Qvec(2)-90;
-    [paramsFit2,fVal2,modelResponseStruct2] = fitResponse@tfe(obj,thePacket,varargin{:},'defaultParams',defaultParamsVals);
+    initialParamsVals.Qvec(2) = initialParamsVals.Qvec(2)-90;
+    [paramsFit2,fVal2,modelResponseStruct2] = fitResponse@tfe(obj,thePacket,varargin{:},'defaultParams',initialParamsVals);
     
     % Pick the winner
     if (fVal1 <= fVal2)
