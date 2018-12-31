@@ -153,13 +153,15 @@ xlabel('L contrast');
 ylabel('M contrast');
 axis('square');
 for ii = 1:nUniqueDirections
-    criterionContrast = InvertNakaRushton([indNRParams(ii).crfAmp,indNRParams(ii).crfSemi,indNRParams(ii).crfExponent],criterionResponse-indNRParams(ii).crfOffset);
+    criterionContrast = tfeNRInvert(indNRParams(ii),{criterionResponse});
+    % InvertNakaRushton([indNRParams(ii).crfAmp,indNRParams(ii).crfSemi,indNRParams(ii).crfExponent],{criterionResponse-indNRParams(ii).crfOffset);
     plotDirection = uniqueDirections(:,ii);
-    plotStimulus = tfeQCMDirectionsContrastsToStimuli(plotDirection,criterionContrast);
+    plotStimulus = tfeQCMDirectionsContrastsToStimuli(plotDirection,criterionContrast{1});
     plot(plotStimulus(1),plotStimulus(2),'ro','MarkerFaceColor','r','MarkerSize',12);
     
-    criterionContrast = InvertNakaRushton([commonAmpExpNRParams(ii).crfAmp,commonAmpExpNRParams(ii).crfSemi,commonAmpExpNRParams(ii).crfExponent],criterionResponse-commonAmpExpNRParams(ii).crfOffset);
+    criterionContrast = tfeNRInvert(commonAmpExpNRParams(ii),{criterionResponse});
+    %InvertNakaRushton([commonAmpExpNRParams(ii).crfAmp,commonAmpExpNRParams(ii).crfSemi,commonAmpExpNRParams(ii).crfExponent],criterionResponse-commonAmpExpNRParams(ii).crfOffset);
     plotDirection = uniqueDirections(:,ii);
-    plotStimulus = tfeQCMDirectionsContrastsToStimuli(plotDirection,criterionContrast);
+    plotStimulus = tfeQCMDirectionsContrastsToStimuli(plotDirection,criterionContrast{1});
     plot(plotStimulus(1),plotStimulus(2),'bo','MarkerFaceColor','b','MarkerSize',12);
 end

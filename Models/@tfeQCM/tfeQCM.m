@@ -104,11 +104,11 @@ classdef tfeQCM < tfe
             
             % Set locks
             obj.lockedAngle = p.Results.lockedAngle;
-            if (~isempty(obj.lockedAngle & obj.dimension ~= 2)
+            if (~isempty(obj.lockedAngle) & obj.dimension ~= 2)
                 error('Locking angle only works for dimension 2');
             end
             obj.lockedCrfAmp = p.Results.lockedCrfAmp;
-            obj.lockedCrfExponent = p.Results.lockedCrfExponente;
+            obj.lockedCrfExponent = p.Results.lockedCrfExponent;
             obj.lockedCrfSemi = p.Results.lockedCrfSemi;
             obj.lockedCrfOffset = p.Results.lockedCrfOffset;
         end
