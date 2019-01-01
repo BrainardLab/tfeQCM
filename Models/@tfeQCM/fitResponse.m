@@ -25,7 +25,7 @@ function [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,vararg
 %                           difference in fitting. Passed along as an
 %                           option to the fitError method, but overrides
 %                           the fitError's default value, Default here is
-%                           1000
+%                           1000.
 %
 
 %% Parse vargin for options passed here
@@ -35,24 +35,57 @@ function [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,vararg
 % pairs recognized by the calling routine are not needed here.
 p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
 p.addRequired('thePacket',@isstruct);
-p.addParameter('defaultParams',[],@(x)(isempty(x) | isstruct(x)));
 p.addParameter('initialParams',[],@(x)(isempty(x) | isstruct(x)));
 p.addParameter('fitErrorScalar',1000,@isnumeric);
 p.parse(thePacket,varargin{:});
 
+%% Initial parameters
+[initialParams,vlbParams,vubParams] = obj.defaultParams;
+if (~isempty(p.Results.initialParams))
+    initialParams = p.Results.initialParams;
+end
+      
+%% Locked Naka-Rushton parameters
+if (~isempty(obj.lockedCrfAmp))
+    initialParams.crfAmp = obj.lockedCrfAmp;
+    vlbParams.crfAmp = obj.lockedCrfAmp;
+    vubParams.crfAmp = obj.lockedCrfAmp;
+end
+if (~isempty(obj.lockedCrfExponent))
+    initialParams.crfExponent = obj.lockedCrfExponent;
+    vlbParams.crfExponent = obj.lockedCrfExponent;
+    vubParams.crfExponent = obj.lockedCrfExponent;
+end
+if (~isempty(obj.lockedCrfSemi))
+    initialParams.crfSemi = obj.lockedCrfSemi;
+    vlbParams.crfSemi = obj.lockedCrfSemi;
+    vubParams.crfSemi = obj.lockedCrfSemi;
+end
+if (~isempty(obj.lockedCrfOffset))
+    initialParams.crfOffset = obj.lockedCrfOffset;
+    vlbParams.crfOffset = obj.lockedCrfOffset;
+    vubParams.crfOffset= obj.lockedCrfOffset;
+end
+         
 % Some custom fitting
 if (obj.dimension == 2)
-    % Get initial parameters
-    if (isempty(p.Results.defaultParams))
-        initialParamsVals = obj.defaultParams;
-    else
-        initialParamsVals = p.Results.defaultParams;
+    
+    % Lock angle?
+    if (~isempty(obj.lockedAngle))
+        initialParams.Qvec(2) = obj.lockedAngle;
+        vlbParams.Qvec(2) = obj.lockedAngle;
+        vubParams.Qvec(2) = obj.lockedAngle;
     end
-    [paramsFit1,fVal1,modelResponseStruct1] = fitResponse@tfe(obj,thePacket,varargin{:},'defaultParams',initialParamsVals,'fitErrorScalar',p.Results.fitErrorScalar);
+    
+    [paramsFit1,fVal1,modelResponseStruct1] = fitResponse@tfe(obj,thePacket,varargin{:},...
+        'initialParams',initialParams,'vlbParams',vlbParams,'vubParams',vubParams,...
+        'fitErrorScalar',p.Results.fitErrorScalar);
     
     % Perturb angle by 90 degrees and fit again
-    initialParamsVals.Qvec(2) = initialParamsVals.Qvec(2)-90;
-    [paramsFit2,fVal2,modelResponseStruct2] = fitResponse@tfe(obj,thePacket,varargin{:},'defaultParams',initialParamsVals,'fitErrorScalar',p.Results.fitErrorScalar);
+    initialParams.Qvec(2) = initialParams.Qvec(2)-90;
+    [paramsFit2,fVal2,modelResponseStruct2] = fitResponse@tfe(obj,thePacket,varargin{:},...
+        'initialParams',initialParams,'vlbParams',vlbParams,'vubParams',vubParams,...
+        'fitErrorScalar',p.Results.fitErrorScalar);
     
     % Pick the winner
     if (fVal1 <= fVal2)

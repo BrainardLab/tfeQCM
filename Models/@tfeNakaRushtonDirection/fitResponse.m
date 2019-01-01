@@ -18,11 +18,18 @@ function [NRParams,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargi
 %   predictedResponse  - Response predicted from fit
 %
 % Optional key/value pairs
-%  'defaultParamsInfo'    - Struct (default empty).  This is passed to the
-%                           defaultParams method.
-%  'defaultParams'        - Struct (default empty). Params values for
-%                           defaultParams to return. In turn determines
-%                           starting value for search.
+%
+%  'fitErrorScalar'       - Computed fit error is multiplied by this before
+%                           return.  Sometimes getting the objective
+%                           function onto the right scale makes all the
+%                           difference in fitting. Passed along as an
+%                           option to the fitError method, but overrides
+%                           the fitError's default value, Default here is
+%                           1000.
+
+% History;
+%  01/01/19  dhb   Take advantage of fact that tfe.fitResponse can now receive
+%                   constraints.
 
 %% Parse vargin for options passed here
 %
@@ -31,8 +38,8 @@ function [NRParams,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargi
 % pairs recognized by the calling routine are not needed here.
 p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
 p.addRequired('thePacket',@isstruct);
-p.addParameter('defaultParamsInfo',[],@(x)(isempty(x) | isstruct(x)));
-p.addParameter('defaultParams',[],@(x)(isempty(x) | isstruct(x)));
+p.addParameter('initialParams',[],@(x)(isempty(x) | isstruct(x)));
+p.addParameter('fitErrorScalar',1000,@isnumeric);
 p.parse(thePacket,varargin{:});
 
 %% Check packet validity
@@ -46,21 +53,24 @@ else
 end
 
 %% Set initial values and reasonable bounds on parameters
-[NRParams0,NRParamsLow,NRParamsHigh] = obj.defaultParams('defaultParamsInfo',p.Results.defaultParamsInfo,'defaultParams',p.Results.defaultParams,varargin{:});
+[initialNRParams,vlbNRParams,vubNRParams] = obj.defaultParams;
+if (~isempty(p.Results.initialParams))
+    initialNRParams = p.Results.initialParams;
+end
 
 %% Set up search bounds
 ampLowBound = 0; ampHighBound = 5;
 semiLowBound = 0.005; semiHighBound = 10;
 expLowBound = 0.01; expHighBound = 10;
-expFalloffLowBound = NRParams0.expFalloff;
-expFalloffHighBound = NRParams0.expFalloff;
-noiseSdLowBound = NRParams0.noiseSd;
-noiseSdHighBound = NRParams0.noiseSd;
+expFalloffLowBound = initialNRParams.expFalloff;
+expFalloffHighBound = initialNRParams.expFalloff;
+noiseSdLowBound = initialNRParams.noiseSd;
+noiseSdHighBound = initialNRParams.noiseSd;
 if (obj.lockOffsetToZero)
     % Lock initial value and bounds for offset to zero.
-    NRParams0.crfOffset = 0;
-    offsetLowBound = NRParams0.crfOffset;
-    offsetHighBound = NRParams0.crfOffset;;
+    initialNRParams.crfOffset = 0;
+    offsetLowBound = initialNRParams.crfOffset;
+    offsetHighBound = initialNRParams.crfOffset;
 else
     % The commented out code sets the initial value
     % for the offset to the minimum response. Might
@@ -79,27 +89,21 @@ end
 
 % Pack bounds into vector form of parameters.
 for ii = 1:obj.nDirections
-    NRParamsLow(ii).crfAmp = ampLowBound;
-    NRParamsLow(ii).crfSemi = semiLowBound;
-    NRParamsLow(ii).crfExponent = expLowBound;
-    NRParamsLow(ii).crfOffset = offsetLowBound;
-    NRParamsLow(ii).expFalloff = expFalloffLowBound;
-    NRParamsLow(ii).noiseSd = noiseSdLowBound;
+    vlbNRParams(ii).crfAmp = ampLowBound;
+    vlbNRParams(ii).crfSemi = semiLowBound;
+    vlbNRParams(ii).crfExponent = expLowBound;
+    vlbNRParams(ii).crfOffset = offsetLowBound;
+    vlbNRParams(ii).expFalloff = expFalloffLowBound;
+    vlbNRParams(ii).noiseSd = noiseSdLowBound;
 end
 for ii = 1:obj.nDirections
-    NRParamsHigh(ii).crfAmp = ampHighBound;
-    NRParamsHigh(ii).crfSemi = semiHighBound;
-    NRParamsHigh(ii).crfExponent = expHighBound;
-    NRParamsHigh(ii).crfOffset = offsetHighBound;
-    NRParamsHigh(ii).expFalloff = expFalloffHighBound;
-    NRParamsHigh(ii).noiseSd = noiseSdHighBound;
+    vubNRParams(ii).crfAmp = ampHighBound;
+    vubNRParams(ii).crfSemi = semiHighBound;
+    vubNRParams(ii).crfExponent = expHighBound;
+    vubNRParams(ii).crfOffset = offsetHighBound;
+    vubNRParams(ii).expFalloff = expFalloffHighBound;
+    vubNRParams(ii).noiseSd = noiseSdHighBound;
 end
-
-%% Set initial parameters and bounds into vector form
-paramsVec0 = obj.paramsToVec(NRParams0);
-vlbVec = obj.paramsToVec(NRParamsLow);
-vubVec = obj.paramsToVec(NRParamsHigh);
-
 
 %% Set up linear parameter constraints
 %
@@ -110,7 +114,7 @@ vubVec = obj.paramsToVec(NRParamsHigh);
 %
 % I don't see any easy way around knowing the order in
 % which the parameters are packed into vectors here.
-tempvec = obj.paramsToVec(NRParamsLow(1));
+tempvec = obj.paramsToVec(vlbNRParams(1));
 nParams = length(tempvec);
 if (obj.nDirections > 1)
     % Build constraint matrix if there is more than one direction.
@@ -124,7 +128,7 @@ if (obj.nDirections > 1)
     if (obj.commonAmplitude)
         paramIndex = 1;
         for ii = 2:obj.nDirections
-            Aeq(eqRowIndex,:) = zeros(1,nParams*length(NRParamsLow'));
+            Aeq(eqRowIndex,:) = zeros(1,nParams*length(vlbNRParams'));
             Aeq(eqRowIndex,paramIndex) = 1;
             Aeq(eqRowIndex,(ii-1)*nParams+paramIndex) = -1;
             beq(eqRowIndex) = 0;
@@ -136,7 +140,7 @@ if (obj.nDirections > 1)
     if (obj.commonSemi)
         paramIndex = 2;
         for ii = 2:obj.nDirections
-            Aeq(eqRowIndex,:) = zeros(1,nParams*length(NRParamsLow'));
+            Aeq(eqRowIndex,:) = zeros(1,nParams*length(vlbNRParams'));
             Aeq(eqRowIndex,paramIndex) = 1;
             Aeq(eqRowIndex,(ii-1)*nParams+paramIndex) = -1;
             beq(eqRowIndex) = 0;
@@ -148,7 +152,7 @@ if (obj.nDirections > 1)
     if (obj.commonExp)
         paramIndex = 3;
         for ii = 2:obj.nDirections
-            Aeq(eqRowIndex,:) = zeros(1,nParams*length(NRParamsLow'));
+            Aeq(eqRowIndex,:) = zeros(1,nParams*length(vlbNRParams'));
             Aeq(eqRowIndex,paramIndex) = 1;
             Aeq(eqRowIndex,(ii-1)*nParams+paramIndex) = -1;
             beq(eqRowIndex) = 0;
@@ -160,7 +164,7 @@ if (obj.nDirections > 1)
     if (obj.commonOffset)
         paramIndex = 4;
         for ii = 2:obj.nDirections
-            Aeq(eqRowIndex,:) = zeros(1,nParams*length(NRParamsLow'));
+            Aeq(eqRowIndex,:) = zeros(1,nParams*length(vlbNRParams'));
             Aeq(eqRowIndex,paramIndex) = 1;
             Aeq(eqRowIndex,(ii-1)*nParams+paramIndex) = -1;
             beq(eqRowIndex) = 0;
@@ -174,34 +178,11 @@ else
     beq = [];
 end
 
-%% David sez: "Fit that sucker"
-switch (obj.verbosity)
-    case 'high'
-        fprintf('Fitting.');
-end
-
-%% fmincon fit
-options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off'); %,'Algorithm',p.Results.fminconAlgorithm);
-%options = optimset(options,'TolCon',1e-3);
-% if ~isempty(p.Results.DiffMinChange)
-%     options = optimset(options,'DiffMinChange',p.Results.DiffMinChange);
-% end
-paramsFitVec = fmincon(@(modelParamsVec)obj.fitError(modelParamsVec, ...
-    thePacket),paramsVec0,[],[],Aeq,beq,vlbVec,vubVec,[],options);
-
-% Get error and predicted response for final parameters
-[fVal,modelResponseStruct] = obj.fitError(paramsFitVec,thePacket);
-
-switch (obj.verbosity)
-    case 'high'
-        fprintf('\n');
-        fprintf('Fit error value: %g', fVal);
-        fprintf('\n');
-end
-
-% Convert fit parameters for return
-NRParams = obj.vecToParams(paramsFitVec);
+%% Fit using tfe method
+[NRParams,fVal,modelResponseStruct] = fitResponse@tfe(obj,thePacket,varargin{:},...
+        'initialParams',initialNRParams,'vlbParams',vlbNRParams,'vubParams',vubNRParams,...
+        'Aeq',Aeq,'beq',beq,...
+        'fitErrorScalar',p.Results.fitErrorScalar);
 
 end
         

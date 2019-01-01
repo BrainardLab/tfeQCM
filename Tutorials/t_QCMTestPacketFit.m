@@ -116,12 +116,11 @@ end
 % This starts with the amp/exp/offset NR parameters found from the common fit
 % above, but that doesn't actually seem to be necessary.
 QCMObj = tfeQCMDirection('verbosity','none','dimension',theDimension);
-defaultParams = QCMObj.defaultParams;
-defaultParams.crfAmp = commonAmpExpNRParams(1).crfAmp;
-defaultParams.crfExponent = commonAmpExpNRParams(1).crfExponent;
-defaultParams.crfOffset = commonAmpExpNRParams(1).crfOffset;
-defaultParamsInfo = [];
-[QCMParams,~,QCMResponses] = QCMObj.fitResponse(theDirectionPacket,'defaultParams',defaultParams,'defaultParamsInfo',defaultParamsInfo);
+initialParams = QCMObj.defaultParams;
+initialParams.crfAmp = commonAmpExpNRParams(1).crfAmp;
+initialParams.crfExponent = commonAmpExpNRParams(1).crfExponent;
+initialParams.crfOffset = commonAmpExpNRParams(1).crfOffset;
+[QCMParams,~,QCMResponses] = QCMObj.fitResponse(theDirectionPacket,'initialParams',initialParams);
 fprintf('\nQCM parameters from direction fit:\n');
 QCMObj.paramPrint(QCMParams);
 directionIndex = 1;
@@ -153,13 +152,11 @@ ylabel('M contrast');
 axis('square');
 for ii = 1:nUniqueDirections
     criterionContrast = tfeNRInvert(indNRParams(ii),{criterionResponse});
-    % InvertNakaRushton([indNRParams(ii).crfAmp,indNRParams(ii).crfSemi,indNRParams(ii).crfExponent],{criterionResponse-indNRParams(ii).crfOffset);
     plotDirection = uniqueDirections(:,ii);
     plotStimulus = tfeQCMDirectionsContrastsToStimuli(plotDirection,criterionContrast{1});
     plot(plotStimulus(1),plotStimulus(2),'ro','MarkerFaceColor','r','MarkerSize',12);
     
     criterionContrast = tfeNRInvert(commonAmpExpNRParams(ii),{criterionResponse});
-    %InvertNakaRushton([commonAmpExpNRParams(ii).crfAmp,commonAmpExpNRParams(ii).crfSemi,commonAmpExpNRParams(ii).crfExponent],criterionResponse-commonAmpExpNRParams(ii).crfOffset);
     plotDirection = uniqueDirections(:,ii);
     plotStimulus = tfeQCMDirectionsContrastsToStimuli(plotDirection,criterionContrast{1});
     plot(plotStimulus(1),plotStimulus(2),'bo','MarkerFaceColor','b','MarkerSize',12);

@@ -30,6 +30,7 @@ rng(0);
 % Naka-Rushton Params
 FIT_NAKARUSHTON = true;
 NOOFFSET = false;
+LOCKEDOFFSET = true;
 theDimension = 2;
 Rmax   = 0.9;
 sigma  = 0.1;
@@ -48,7 +49,11 @@ ellParams = [1 minorAxis rotdeg];
 %% Set up QCM matching parameters above
 %
 % Keep noise very small for testing
-QCMObj = tfeQCM('verbosity','none','dimension',theDimension);
+if (LOCKEDOFFSET)
+    QCMObj = tfeQCM('verbosity','none','dimension',theDimension,'lockedCrfOffset',offset);
+else
+    QCMObj = tfeQCM('verbosity','none','dimension',theDimension);
+end
 paramsQCM = QCMObj.defaultParams;
 paramsQCM.Qvec = [minorAxis rotdeg];
 paramsQCM.crfAmp = Rmax;
@@ -146,12 +151,7 @@ thePacket.kernel = [];
 thePacket.metaData = [];
 
 % Fit the packet
-if (NOOFFSET)
-    defaultParamsInfo.noOffset = true;
-else
-    defaultParamsInfo.noOffset = false;
-end
-[fitQCMParams,fVal,fitResponseStructQCM] = QCMObj.fitResponse(thePacket,'defaultParamsInfo',defaultParamsInfo);
+[fitQCMParams,fVal,fitResponseStructQCM] = QCMObj.fitResponse(thePacket);
 fprintf('\nQCM parameters from fit:\n');
 QCMObj.paramPrint(fitQCMParams)
 
@@ -165,7 +165,11 @@ end
 %% Verify QCMDirection fit 
 if (~RANDOM_STIMULI)
     % Create direction QCM object
-    QCMDirectionObj = tfeQCMDirection('verbosity','none','dimension',theDimension);
+    if (LOCKEDOFFSET)
+        QCMDirectionObj = tfeQCMDirection('verbosity','none','dimension',theDimension,'lockedCrfOffset',offset);
+    else
+        QCMDirectionObj = tfeQCMDirection('verbosity','none','dimension',theDimension);
+    end
 
     % Use direction object to compute response. Should get same answer as
     % with regular QCM above.
@@ -180,7 +184,7 @@ if (~RANDOM_STIMULI)
     % Now fit with direction object and make sure that works the same.
     theDirectionPacket = thePacket;
     theDirectionPacket.stimulus = directionStimulusStruct;
-    [fitQCMDirectionParams,fVal,fitQCMDirectionResponseStruct] = QCMDirectionObj.fitResponse(theDirectionPacket,'defaultParamsInfo',defaultParamsInfo);
+    [fitQCMDirectionParams,fVal,fitQCMDirectionResponseStruct] = QCMDirectionObj.fitResponse(theDirectionPacket);
     fprintf('\nQCM parameters from direction fit:\n');
     QCMDirectionObj.paramPrint(fitQCMDirectionParams)
     if (max(abs(fitQCMDirectionResponseStruct.values-fitQCMResponseStruct.values)/max(fitQCMResponseStruct.values(:))) > 1e-5)
