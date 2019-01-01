@@ -11,12 +11,7 @@ function [params,paramsLb,paramsUb] = defaultParams(obj,varargin)
 %    'defaultParams'     - (struct, default empty). If not empty, take the
 %                          passed structure as defining the default
 %                          parameters.
-%    'defaultParamsInfo  - (struct, default empty). Can be passed by the
-%                          fitResponse routine of tfe. We understand the
-%                          following fields.
-%                            'noOffset' (logical) If true, force offset
-%                             to zero.  Otherwise fit the offset.
-
+%
 % History:
 %   11/20/18  dhb, mab     Keep minor axis smaller than major in limits,
 %                          for first two. 
@@ -26,7 +21,6 @@ function [params,paramsLb,paramsUb] = defaultParams(obj,varargin)
 % Parse vargin for options passed here
 p = inputParser; p.KeepUnmatched = true;
 p.addParameter('defaultParams',[],@(x)(isempty(x) | isstruct(x)));
-p.addParameter('defaultParamsInfo',[],@(x)(isempty(x) | isstruct(x)));
 p.parse(varargin{:});
 
 if (isempty(p.Results.defaultParams))
@@ -93,12 +87,5 @@ paramsUb.crfExponent = 10;
 paramsUb.expFalloff = 1e1;
 paramsUb.noiseLevel = 100;
 paramsUb.crfOffset = 2;
-
-%% Handle noOffset possibility
-if (~isempty(p.Results.defaultParamsInfo) & p.Results.defaultParamsInfo.noOffset)
-    params.crfOffset = 0;
-    paramsLb.crfOffset = 0;
-    paramsUb.crfOffset = 0;
-end
 
 end
