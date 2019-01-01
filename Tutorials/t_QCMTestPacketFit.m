@@ -146,7 +146,6 @@ ellPlot = figure; clf; hold on
 nTheta = 500;
 circleDirections = UnitCircleGenerate(nTheta);
 [contrasts1,stimuli1] = tfeQCMInvertDirection(QCMParams,circleDirections,criterionResponse);
-figure; hold on
 plot(stimuli1(1,:),stimuli1(2,:),'k','LineWidth',3);
 xlim([-0.3 0.3]); ylim([-0.3 0.3]);
 xlabel('L contrast');
