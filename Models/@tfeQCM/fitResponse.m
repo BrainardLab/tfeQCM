@@ -17,7 +17,16 @@ function [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,vararg
 %   predictedResponse  - Response predicted from fit
 %
 % Optional key/value pairs
-%   See tfe.fitResponse for these.
+%   See tfe.fitResponse for these, with exceptions listed below.
+%
+%  'fitErrorScalar'       - Computed fit error is multiplied by this before
+%                           return.  Sometimes getting the objective
+%                           function onto the right scale makes all the
+%                           difference in fitting. Passed along as an
+%                           option to the fitError method, but overrides
+%                           the fitError's default value, Default here is
+%                           1000
+%
 
 %% Parse vargin for options passed here
 %
@@ -26,12 +35,9 @@ function [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,vararg
 % pairs recognized by the calling routine are not needed here.
 p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
 p.addRequired('thePacket',@isstruct);
-p.addParameter('defaultParamsInfo',[],@(x)(isempty(x) | isstruct(x)));
 p.addParameter('defaultParams',[],@(x)(isempty(x) | isstruct(x)));
-p.addParameter('searchMethod','fmincon',@ischar);
-p.addParameter('DiffMinChange',[],@isnumeric);
-p.addParameter('fminconAlgorithm','active-set',@ischar);
-p.addParameter('errorType','rmse',@ischar);
+p.addParameter('initialParams',[],@(x)(isempty(x) | isstruct(x)));
+p.addParameter('fitErrorScalar',1000,@isnumeric);
 p.parse(thePacket,varargin{:});
 
 % Some custom fitting
@@ -42,11 +48,11 @@ if (obj.dimension == 2)
     else
         initialParamsVals = p.Results.defaultParams;
     end
-    [paramsFit1,fVal1,modelResponseStruct1] = fitResponse@tfe(obj,thePacket,varargin{:},'defaultParams',initialParamsVals);
+    [paramsFit1,fVal1,modelResponseStruct1] = fitResponse@tfe(obj,thePacket,varargin{:},'defaultParams',initialParamsVals,'fitErrorScalar',p.Results.fitErrorScalar);
     
     % Perturb angle by 90 degrees and fit again
     initialParamsVals.Qvec(2) = initialParamsVals.Qvec(2)-90;
-    [paramsFit2,fVal2,modelResponseStruct2] = fitResponse@tfe(obj,thePacket,varargin{:},'defaultParams',initialParamsVals);
+    [paramsFit2,fVal2,modelResponseStruct2] = fitResponse@tfe(obj,thePacket,varargin{:},'defaultParams',initialParamsVals,'fitErrorScalar',p.Results.fitErrorScalar);
     
     % Pick the winner
     if (fVal1 <= fVal2)
