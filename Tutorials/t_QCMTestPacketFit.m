@@ -136,6 +136,31 @@ for ii = 1:subRows
     end
 end 
 
+%% Fit with the QCM direction model, with angle locked to 45 degrees
+%
+% This starts with the amp/exp/offset NR parameters found from the common fit
+% above, but that doesn't actually seem to be necessary.
+QCMLockAngleObj = tfeQCMDirection('verbosity','none','dimension',theDimension,'lockedAngle',45);
+initialParams = QCMObj.defaultParams;
+initialParams.crfAmp = commonAmpExpNRParams(1).crfAmp;
+initialParams.crfExponent = commonAmpExpNRParams(1).crfExponent;
+initialParams.crfOffset = commonAmpExpNRParams(1).crfOffset;
+[QCMLockAngleParams,~,QCMLockAngleResponses] = QCMLockAngleObj.fitResponse(theDirectionPacket,'initialParams',initialParams);
+fprintf('\nQCM parameters from direction fit and locked angle:\n');
+QCMObj.paramPrint(QCMLockAngleParams);
+directionIndex = 1;
+figure(crfFig);
+for ii = 1:subRows
+    for jj = 1:subCols
+        plotDirection = uniqueDirections(:,directionIndex);
+        plotStimuli = tfeQCMDirectionsContrastsToStimuli(plotDirection(:,ones(1,nPlotContrasts)),plotContrasts);
+        plotResponses = tfeQCMForward(QCMLockAngleParams,plotStimuli);
+        subplot(subRows,subCols,directionIndex); hold on;
+        plot(plotContrasts,plotResponses,'y','LineWidth',4);
+        directionIndex = directionIndex+1;
+    end
+end 
+
 %% Make a plot of QCM fit in contrast form
 %
 % Because of the offset in the data, a criterion response
@@ -146,6 +171,8 @@ nTheta = 500;
 circleDirections = UnitCircleGenerate(nTheta);
 [contrasts1,stimuli1] = tfeQCMInvertDirection(QCMParams,circleDirections,criterionResponse);
 plot(stimuli1(1,:),stimuli1(2,:),'k','LineWidth',3);
+[contrasts2,stimuli2] = tfeQCMInvertDirection(QCMLockAngleParams,circleDirections,criterionResponse);
+plot(stimuli2(1,:),stimuli2(2,:),'r','LineWidth',3);
 xlim([-0.3 0.3]); ylim([-0.3 0.3]);
 xlabel('L contrast');
 ylabel('M contrast');

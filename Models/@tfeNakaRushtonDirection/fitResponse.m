@@ -18,7 +18,15 @@ function [NRParams,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargi
 %   predictedResponse  - Response predicted from fit
 %
 % Optional key/value pairs
+%  Those understood by tfe.fitResponse with the following adjustments.
 %
+% 'fminconAlgorithm'     - String (default 'interior-point'). If set to a string,
+%                           passed on as algorithm in options to fmincon.
+%                           Can be empty or any algorithm string understood
+%                           by fmincon.
+%                              [] - Use fmincon's current default algorithm
+%                              'active-set' - Active set algorithm
+%                              'interior-point' - Interior point algorithm.
 %  'fitErrorScalar'       - Computed fit error is multiplied by this before
 %                           return.  Sometimes getting the objective
 %                           function onto the right scale makes all the
@@ -26,6 +34,7 @@ function [NRParams,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargi
 %                           option to the fitError method, but overrides
 %                           the fitError's default value, Default here is
 %                           1000.
+%  
 
 % History;
 %  01/01/19  dhb   Take advantage of fact that tfe.fitResponse can now receive
@@ -39,6 +48,7 @@ function [NRParams,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargi
 p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
 p.addRequired('thePacket',@isstruct);
 p.addParameter('initialParams',[],@(x)(isempty(x) | isstruct(x)));
+p.addParameter('fminconAlgorithm','interior-point',@(x) (isempty(x) | ischar(x)));
 p.addParameter('fitErrorScalar',1000,@isnumeric);
 p.parse(thePacket,varargin{:});
 
@@ -182,6 +192,7 @@ end
 [NRParams,fVal,modelResponseStruct] = fitResponse@tfe(obj,thePacket,varargin{:},...
         'initialParams',initialNRParams,'vlbParams',vlbNRParams,'vubParams',vubNRParams,...
         'Aeq',Aeq,'beq',beq,...
+        'fminconAlgorithm',p.Results.fminconAlgorithm,...
         'fitErrorScalar',p.Results.fitErrorScalar);
 
 end
