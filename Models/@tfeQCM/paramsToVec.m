@@ -45,5 +45,7 @@ switch obj.dimension
         end
 end
 
+% transpose to match convention
+x = x';
 
 end
