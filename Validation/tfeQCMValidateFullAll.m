@@ -12,6 +12,9 @@ p = inputParser; p.PartialMatching = false;
 p.addParameter('asAssertion',false,@islogical);
 p.parse(varargin{:});
 
+%% Close figs
+close all;
+
 %% Now check tutorials
 tutorialStatus = tfeQCMRunTutorialsAll;
 if (p.Results.asAssertion)
