@@ -1,6 +1,6 @@
 function tfeQCMValidateFullAll(varargin)
 % tfeQCValidateFullAll(varargin)
-% 
+%
 % Full data check (no figures, no publish) of all validation functions
 %
 % Optional key/value pairs
