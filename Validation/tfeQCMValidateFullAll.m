@@ -29,14 +29,14 @@ end
 
 %% Report
 if (tutorialStatus & exampleStatus)
-    fprintf('\n*** ISET3D validations PASS ***\n');
+    fprintf('\n*** tfeQCM validations PASS ***\n');
 else
-    fprintf('\n*** ISET3D validations FAIL ***\n');
+    fprintf('\n*** tfeQCM validations FAIL ***\n');
     if (~tutorialStatus)
-        fprintf('\tOne or more tutorials failed\n');
+        fprintf('\tOne or more tfeQCM tutorials failed\n');
     end
     if (~exampleStatus)
-        fprintf('\tOne or more examples failed\n');
+        fprintf('\tOne or more tfeQCM examples failed\n');
     end
 end
         
