@@ -26,6 +26,20 @@ exampleStatus = tfeQCMRunExamplesAll;
 if (p.Results.asAssertion)
     assert(exampleStatus, 'One or more examples failed.');
 end
+
+%% Report
+if (tutorialStatus & exampleStatus)
+    fprintf('\n*** ISET3D validations PASS ***\n');
+else
+    fprintf('\n*** ISET3D validations FAIL ***\n');
+    if (~tutorialStatus)
+        fprintf('\tOne or more tutorials failed\n');
+    end
+    if (~exampleStatus)
+        fprintf('\tOne or more examples failed\n');
+    end
+end
+        
         
 
 end
