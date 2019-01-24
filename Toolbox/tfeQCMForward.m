@@ -1,8 +1,8 @@
-function [responses] = tfeQCMForward(params,stimuli)
+function [responses,quadraticFactors] = tfeQCMForward(params,stimuli)
 % Compute QCM forward model
 %
 % Synopsis
-%    [responses] = tfeQCMForward(params,stimuli)
+%    [responses,quadraticFactors] = tfeQCMForward(params,stimuli)
 %
 % Description:
 %    Take stimuli and compute QCM responses.
@@ -13,6 +13,13 @@ function [responses] = tfeQCMForward(params,stimuli)
 % 
 % Outputs:
 %      responses     - Row vector of responses
+%      quadraticFactors - Vector with same length as number of stimuli.
+%                      Divide the semi saturation constant of the
+%                      Naka-Rushton by this if you want Naka-Rushton
+%                      parameters to apply directly to the stimuli. (The
+%                      parameters passed to this routine are applied after
+%                      the quadratic structure has been taken into
+%                      account.)
 
 % History:
 %   11/24/19  dhb    Wrote it for modularity.
@@ -31,9 +38,15 @@ dimension = size(stimuli,1);
 %
 % This represents the quadaratic component of the neural response after
 % application of the quadratic
-theLengths = diag(sqrt(stimuli'*Q*stimuli))';
+stimulusContrasts = diag(stimuli'*stimuli)';
+equivalentContrasts = diag(sqrt(stimuli'*Q*stimuli))';
+quadraticFactors = equivalentContrasts ./ stimulusContrasts;
 
 %% Push the quadratic response through a Naka-Rushton non-linearity
-responses = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],theLengths) + params.crfOffset;
+responses = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],equivalentContrasts) + params.crfOffset;
+
+%% Conceptually
+% responses = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],quadraticFactors.*stimulusContrasts) + params.crfOffset;
+% responses = ComputeNakaRushton([params.crfAmp,params.crfSemi ./ quadraticFactors,params.crfExponent],stimulusContrasts) + params.crfOffset;
 
 

@@ -4,6 +4,11 @@ function modelResponseStruct = computeResponse(obj,params,stimulusStruct,kernelS
 % Compute method for the quadratic color model with stimuli in
 % direction/contrast form.
 %
+% In addition to timebase and values fields, the returned response structure contains a metaData field.
+%   modelResponseStruct.metaData,quadtraticFactors.
+% These factors may be used to adjust the Naka-Rushton parameters per color
+% direction.  See tfeQCMForward.
+%
 % Optional key/value pairs
 %   'addNoise'         - true/false (default false).  Add noise to computed
 %                        response?  Useful for simulations.
@@ -40,11 +45,12 @@ stimuli = tfeQCMDirectionsContrastsToStimuli(directions,contrasts);
 % neuralResponse = computeResponse@tfeQCM(params,stimulusStruct,kernelStruct,varargin{:});
 
 %% Get neural response from QCM model
-neuralResponse = tfeQCMForward(params,stimuli);
+[neuralResponse,quadraticFactors] = tfeQCMForward(params,stimuli);
 
 %% Make the neural response structure
 modelResponseStruct.timebase = stimulusStruct.timebase;
 modelResponseStruct.values = neuralResponse;
+modelResponseStruct.metaData.quadraticFactors = quadraticFactors;
 
 %% Optionally, convolve with a passed kernel
 modelResponseStruct = obj.applyKernel(modelResponseStruct,kernelStruct,varargin{:});
