@@ -35,6 +35,10 @@ end
 % this was initialized with.
 [indDirectionsTemp,directionIndices] = tfeQCMParseDirections(directions);
 nIndDirections = size(indDirectionsTemp,2);
+
+%  NOTE: MB:  This needs to be changed to allows for unused directions but
+%  still checks for unkown directions. This applies to the number of
+%  indicies below 
 if (nIndDirections ~= obj.nDirections)
     error('Passed stimulus array does not have same number of directions as object');
 end
