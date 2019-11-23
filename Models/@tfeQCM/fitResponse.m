@@ -106,12 +106,20 @@ if (obj.dimension == 2)
         modelResponseStruct = modelResponseStruct2;
     end
     
+   
     % Put angle into canonical range
     if  (paramsFit.Qvec(2) < -90)
         paramsFit.Qvec(2) = paramsFit.Qvec(2) + 180;
     elseif (paramsFit.Qvec(2) > 90)
         paramsFit.Qvec(2) = paramsFit.Qvec(2) - 180;
     end
+    
+    % Use this to check error value as it sits here
+    fValCheck = obj.fitError(obj.paramsToVec(paramsFit),thePacket,varargin{:});
+    if (fValCheck ~= fVal)
+        error('Cannot compute the same fit error twice the same way. Check.');
+    end
+
 else
      [paramsFit,fVal,modelResponseStruct] = fitResponse@tfe(obj,thePacket,varargin{:});
 end   
