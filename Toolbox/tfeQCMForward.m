@@ -39,16 +39,18 @@ dimension = size(stimuli,1);
 % This represents the quadaratic component of the neural response after
 % application of the quadratic
 %
-% Although this is conceptually what we want to do, it is
-% much slower than the loop version when stimulus size gets
-% large, because the loop does not compute the off diagonal
-% elements that we then immediately toss. For a stimulus
-% with 7200 time points, the loop is over a factor 10 faster.
-% equivalentContrasts = sqrt(diag(stimuli'*Q*stimuli))';
-equivalentContrasts = zeros(1,size(stimuli,2));
-for ii = 1:size(stimuli,2)
-  equivalentContrasts(ii) = sqrt(stimuli(:,ii)'*Q*stimuli(:,ii));  
-end   
+% Which way is faster depends on number of time points.  500
+% is a reasonable guess as the right point to switch over to
+% the loop.
+if (size(stimuli,2) < 500)
+    equivalentContrasts = sqrt(diag(stimuli'*Q*stimuli))';
+else
+    equivalentContrasts = zeros(1,size(stimuli,2));
+    for ii = 1:size(stimuli,2)
+        equivalentContrasts(ii) = sqrt(stimuli(:,ii)'*Q*stimuli(:,ii));
+    end
+end
+
 
 % Only do this if we need it for the return variable.  Computing norm
 % is a little faster than sqrt of the explicit dot product.
