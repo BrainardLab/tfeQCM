@@ -38,9 +38,27 @@ dimension = size(stimuli,1);
 %
 % This represents the quadaratic component of the neural response after
 % application of the quadratic
-stimulusContrasts = diag(stimuli'*stimuli)';
-equivalentContrasts = diag(sqrt(stimuli'*Q*stimuli))';
-quadraticFactors = equivalentContrasts ./ stimulusContrasts;
+%
+% Although this is conceptually what we want to do, it is
+% much slower than the loop version when stimulus size gets
+% large, because the loop does not compute the off diagonal
+% elements that we then immediately toss. For a stimulus
+% with 7200 time points, the loop is over a factor 10 faster.
+% equivalentContrasts = sqrt(diag(stimuli'*Q*stimuli))';
+equivalentContrasts = zeros(1,size(stimuli,2));
+for ii = 1:size(stimuli,2)
+  equivalentContrasts(ii) = sqrt(stimuli(:,ii)'*Q*stimuli(:,ii));  
+end   
+
+% Only do this if we need it for the return variable.  Computing norm
+% is a little faster than sqrt of the explicit dot product.
+if (nargout >= 2)
+    stimulusContrasts = zeros(1,size(stimuli,2));
+    for ii = 1:size(stimuli,2)
+        stimulusContrasts(ii) = norm(stimuli(:,ii));  
+    end
+    quadraticFactors = equivalentContrasts ./ stimulusContrasts;
+end
 
 %% Push the quadratic response through a Naka-Rushton non-linearity
 responses = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],equivalentContrasts) + params.crfOffset;
