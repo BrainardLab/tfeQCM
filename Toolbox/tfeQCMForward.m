@@ -51,13 +51,16 @@ else
     end
 end
 
-
 % Only do this if we need it for the return variable.  Computing norm
 % is a little faster than sqrt of the explicit dot product.
 if (nargout >= 2)
-    stimulusContrasts = zeros(1,size(stimuli,2));
-    for ii = 1:size(stimuli,2)
-        stimulusContrasts(ii) = norm(stimuli(:,ii));  
+    if (size(stimuli,2) < 500)
+        stimulusContrasts = sqrt(diag(stimuli'*stimuli))';
+    else
+        stimulusContrasts = zeros(1,size(stimuli,2));
+        for ii = 1:size(stimuli,2)
+            stimulusContrasts(ii) = norm(stimuli(:,ii));
+        end
     end
     quadraticFactors = equivalentContrasts ./ stimulusContrasts;
 end
