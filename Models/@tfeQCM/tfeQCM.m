@@ -61,6 +61,11 @@ classdef tfeQCM < tfe
         lockedCrfExponent = [];
         lockedCrfSemi = [];
         lockedCrfOffset = [];
+        
+        % Flag as to whether we are fitting.  For very careful use as a way
+        % of communicating when we can save some time during fitting.
+        fitting = false;
+        stimuli = [];
     end
     
     % Private properties. Only methods of the parent class can set these

@@ -7,6 +7,12 @@ function [responses,quadraticFactors] = tfeQCMForward(params,stimuli)
 % Description:
 %    Take stimuli and compute QCM responses.
 %
+%    Computation method changes depending on number of stimuli,
+%    as the fastest way changes with that variable as well. 
+%    Currently coded with break point at 500, but you can
+%    change in the source by changing value of variable methodSwitchN.
+%    Could recode so that this is an optional parameter with a default.
+%
 % Inputs:
 %      params        - QCM model parameter struct
 %      stimuli       - Stimuli, with stimulus contrasts in columns
@@ -25,6 +31,9 @@ function [responses,quadraticFactors] = tfeQCMForward(params,stimuli)
 %   11/24/19  dhb    Wrote it for modularity.
 %             dhb    Enforce constraint on minor axis.
 
+%% Method switch N
+methodSwitchN = 500;
+
 %% Check parameterization
 if (~tfeQCMCheckParams(params))
     error('Bad values in QCM parameters structure');
@@ -40,9 +49,9 @@ dimension = size(stimuli,1);
 % application of the quadratic
 %
 % Which way is faster depends on number of time points.  500
-% is a reasonable guess as the right point to switch over to
-% the loop.
-if (size(stimuli,2) < 500)
+% (default value of methodSwitchN) is a reasonable guess as the
+% right point to switch over to the loop.
+if (size(stimuli,2) < methodSwitchN)
     equivalentContrasts = sqrt(diag(stimuli'*Q*stimuli))';
 else
     equivalentContrasts = zeros(1,size(stimuli,2));
@@ -52,9 +61,12 @@ else
 end
 
 % Only do this if we need it for the return variable.  Computing norm
-% is a little faster than sqrt of the explicit dot product.
-if (nargout >= 2)
-    if (size(stimuli,2) < 500)
+% is a little faster than sqrt of the explicit dot product in the
+% stimulus expression, at least for the one case I tested.
+if ((isfield(params,'fitting') & params.fitting) | nargout < 2)
+    quadraticFactors = [];
+else
+    if (size(stimuli,2) < methodSwitchN)
         stimulusContrasts = sqrt(diag(stimuli'*stimuli))';
     else
         stimulusContrasts = zeros(1,size(stimuli,2));

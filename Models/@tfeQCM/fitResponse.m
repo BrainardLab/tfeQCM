@@ -84,17 +84,28 @@ if (obj.dimension == 2)
         vubParams.Qvec(2) = obj.lockedAngle;
     end
     
+    % Setting the fitting flag allows the eventually called
+    % computeResponse routine to take some shortcuts that we
+    % don't want taken in general.  But we care enough about execution
+    % speed to do this.  Be sure to set stimuli back to empty when setting
+    % flag back to false.  The computeResponse routine will compute it when
+    % the fitting flag is true and it is empty.
+    obj.fitting = true; obj.stimuli = [];
     [paramsFit1,fVal1,modelResponseStruct1] = fitResponse@tfe(obj,thePacket,varargin{:},...
         'initialParams',initialParams,'vlbParams',vlbParams,'vubParams',vubParams,...
         'fitErrorScalar',p.Results.fitErrorScalar);
-    
+    obj.fitting = false;
+    obj.stimuli = [];
+
     % Perturb angle by 90 degrees and fit again
     initialParams.Qvec(2) = initialParams.Qvec(2)-90;
+    obj.fitting = true; obj.stimuli = [];
     [paramsFit2,fVal2,modelResponseStruct2] = fitResponse@tfe(obj,thePacket,varargin{:},...
         'initialParams',initialParams,'vlbParams',vlbParams,'vubParams',vubParams,...
         'fminconAlgorithm',p.Results.fminconAlgorithm,...
         'fitErrorScalar',p.Results.fitErrorScalar);
-    
+    obj.fitting = false; obj.stimuli = [];
+
     % Pick the winner
     if (fVal1 <= fVal2)
         paramsFit = paramsFit1;

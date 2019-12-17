@@ -27,6 +27,8 @@ p.parse(params,stimulusStruct,kernelStruct,varargin{:});
 params = p.Results.params;
 
 %% Convert stimulus values to useful format
+%
+% Handle stimulus dimension
 switch obj.dimension
     case 3
         directions = stimulusStruct.values(1:3,:);
@@ -35,7 +37,21 @@ switch obj.dimension
         directions = stimulusStruct.values(1:2,:);
         contrasts = stimulusStruct.values(3,:);
 end
-stimuli = tfeQCMDirectionsContrastsToStimuli(directions,contrasts);
+
+% The converstion is done just once over a series a calls if params.fitting
+% is true, because when we're fitting this routine gets called over
+% and over for the same stimuli.  The caller handles setting and
+% clearing the flag.
+if (obj.fitting & isempty(obj.stimuli))
+    params.fitting = true;
+    stimuli = tfeQCMDirectionsContrastsToStimuli(directions,contrasts);
+    obj.stimuli = stimuli;
+elseif (obj.fitting)
+    stimuli = obj.stimuli;
+else
+    params.fitting = false;
+    stimuli = tfeQCMDirectionsContrastsToStimuli(directions,contrasts);
+end
 
 %% What I want to do is replace the code below with a call to the tfeQCM method.
 % But I get an error about no matching signature when I try that. So for

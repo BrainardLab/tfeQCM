@@ -29,6 +29,13 @@ p.addParameter('addNoise',false,@islogical);
 p.parse(params,stimulusStruct,kernelStruct,varargin{:});
 params = p.Results.params;
 
+%% Fitting?
+if (obj.fitting)
+    params.fitting = true;
+else
+    params.fitting = false;
+end
+
 %% Get neural response from QCM model
 neuralResponse = tfeQCMForward(params,stimulusStruct.values);
 
