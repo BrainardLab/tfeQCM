@@ -48,15 +48,10 @@ directions = round(directions,p.Results.precision);
 % that points at some direction. This is OK because eventually the contrast
 % of the corresponding stimulus will be at 0 and the correct stimulus will 
 % be synthesized no matter what the direction is.
-zeroIndex = [];
-nonZeroIndex = [];
-for ii = 1:size(directions,2)
-    if (norm(directions(:,ii)) == 0)
-        zeroIndex = [zeroIndex ii];
-    else
-        nonZeroIndex = [nonZeroIndex ii];
-    end
-end
+vectorNorms = vecnorm(directions);
+zeroIndex = find(vectorNorms == 0);
+nonZeroIndex = find(vectorNorms >0);
+
 if (isempty(nonZeroIndex))
     error('No non-zero directions passed');
 end
