@@ -126,7 +126,7 @@ if (obj.dimension == 2)
     end
     
     % Use this to check error value as it sits here
-    fValCheck = obj.fitError(obj.paramsToVec(paramsFit),thePacket,varargin{:});
+    fValCheck = obj.fitError(obj.paramsToVec(paramsFit),thePacket,varargin{:},'fitErrorScalar',p.Results.fitErrorScalar);
     if (fValCheck ~= fVal)
         error('Cannot compute the same fit error twice the same way. Check.');
     end
