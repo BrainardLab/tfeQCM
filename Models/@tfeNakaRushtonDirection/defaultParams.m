@@ -41,7 +41,7 @@ end
 %% Set up search bounds
 ampLowBound = 0; ampHighBound = 5;
 semiLowBound = 0.01; semiHighBound = 10;
-expLowBound = 0.01; expHighBound = 10;
+expLowBound = 0.01; expHighBound = 3;
 if (obj.lockOffsetToZero)
     offsetLowBound = 0;
     offsetHighBound = 0;

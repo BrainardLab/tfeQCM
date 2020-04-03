@@ -81,7 +81,7 @@ paramsLb.noiseLevel = 0;
 paramsLb.crfOffset = -2;
 
 %% Upper bounds
-paramsUb.crfAmp = 1e1;
+paramsUb.crfAmp = 3;
 paramsUb.crfSemi = 1e2 ;
 paramsUb.crfExponent = 10;
 paramsUb.expFalloff = 1e1;
