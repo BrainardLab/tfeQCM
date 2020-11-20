@@ -1,4 +1,11 @@
 %% Check that our ellipse code matches the write up and the analysis code
+%
+% Description:
+%   This implements the QCM as described in the paper model appendix and
+%   then verifies that the parameterization matches what we get through a
+%   call into tfeForwardModel.
+%
+% See also: EllipsoidMatricesGenerate, tfeQCMForward.
 
 %% History
 %    11/19/20  dhb  Wrote it.
