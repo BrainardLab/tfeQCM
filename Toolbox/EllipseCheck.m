@@ -9,13 +9,14 @@
 
 %% History
 %    11/19/20  dhb  Wrote it.
+%    11/20/20  dhb  Added code to understand what we did before we fixed things.
 
 %% Initialize
 clear; close all;
 
 %% Set ellipse parameters
-p1 = 45;   % Angle of major axis, counterclockwise from x-axis
-p2 = 0.25; % Minor axis aspect ratio, relative to major.
+p1 = 45;                % Angle of major axis, counterclockwise from x-axis
+p2 = 0.25;              % Minor axis aspect ratio, relative to major.
 
 %% Set up matrix V.
 %
@@ -23,8 +24,8 @@ p2 = 0.25; % Minor axis aspect ratio, relative to major.
 % and verify that deg2rotm gives the same answer.  This matrix rotates
 % vectors by the specified angle in degrees, counterclockwise.
 V = [cosd(p1) -sind(p1) ; sind(p1) cosd(p1)];
-V2 = deg2rotm(p1);
-if (max(abs(V(:)-V2(:)) > 1e-6))
+Vcheck = deg2rotm(p1);
+if (max(abs(V(:)-Vcheck(:)) > 1e-6))
     error('Two ways of defining rotation matrix do not match');
 end
 
@@ -54,10 +55,22 @@ A = S'*V';
 Ainv = inv(A);
 Q = A'*A;
 
+%% Compute a different Q
+%
+% This is what we were doing in the code before we fixed up the conventions
+% to match the way we think about things.  It's equivalent to what we're
+% doing now if we take the new angle to be 90-old angle, and new equivalent
+% contrast as 1/p2*old equivalent contrast.
+V2 = deg2rotm(90-p1)';
+S2 = [1 0 ; 0 p2];
+A2 = S2'*V2';
+Ainv2 = inv(A2);
+Q2 = A2'*A2;
+
 %% Points on the ellipse satisfy c'*Q*c = k^2.
 % 
 % The value of k is the equivalent contrast.  
-k2 = 4;
+k2 = 1;
 nTheta = 1000;
 circleVecs = UnitCircleGenerate(nTheta);
 
@@ -87,22 +100,43 @@ end
 % factor of sqrt(k2) scales up the circle, to match the scale of the
 % desired equivalent contrast.
 ellipseVecs2 = sqrt(k2)*Ainv*circleVecs;
+for tt = 1:nTheta
+    equivalentContrasts2(tt) = sqrt(ellipseVecs2(:,tt)'*Q*ellipseVecs2(:,tt));
+end
+if (max(abs(equivalentContrasts2(:)-sqrt(k2))) > 1e-6)
+    error('Do not get expected vector length for equivalent contrasts second way');
+end
+
+%% Compute ellipse and equiv contrast for old code version.
+%
+% For typical parameters, the ellipse is bigger.  This leads to smaller
+% equivalent contrasts.
+ellipseVecsScaled = sqrt(k2)*Ainv2*circleVecs;
+for tt = 1:nTheta
+    equivalentContrastsScaled(tt) = sqrt(ellipseVecs2(:,tt)'*Q2*ellipseVecs2(:,tt));
+end
+if (max(abs(equivalentContrastsScaled(:)-p2*sqrt(k2))) > 1e-6)
+    error('Do not get expected vector length for equivalent contrasts for old Q');
+end
 
 %% Now let's do it using the code in the tfeQCM
 % 
-% This takes minor axis ratio and angle as parameters
+% This takes minor axis ratio and angle as parameters.  This won't scale
+% with ellipseScale parameter.
 params.Qvec = [p2 p1];
 [tfeEquivalentContrasts] = tfeQCMForward(params,ellipseVecs);
 if (max(abs(tfeEquivalentContrasts-sqrt(k2) > 1e-6)))
     error('tfeQCM does not return expected equivalent contrasts for the isoresponse ellipse');
+else
+    fprintf('tfeQCM matches code in this routine for computation of equivalent contrasts.\n');
 end
 
 %% Plot ellipses both ways.
-theLim = 4;
+theLim = sqrt(1/p2)*sqrt(k2)*2;
 figure; clf; hold on
 plot(ellipseVecs(1,:),ellipseVecs(2,:),'ro','MarkerSize',10,'MarkerFaceColor','r');
 plot(ellipseVecs2(1,:),ellipseVecs2(2,:),'ko','MarkerSize',6,'MarkerFaceColor','k');
-%plot(ellipseVecs3(1,:),ellipseVecs3(2,:),'go','MarkerSize',8,'MarkerFaceColor','g');
+plot(ellipseVecsScaled(1,:),ellipseVecsScaled(2,:),'go','MarkerSize',8,'MarkerFaceColor','g');
 
 xlim([-theLim theLim]); ylim([-theLim theLim]);
 axis('square');
