@@ -13,6 +13,10 @@ function [responses,quadraticFactors] = tfeQCMForward(params,stimuli)
 %    change in the source by changing value of variable methodSwitchN.
 %    Could recode so that this is an optional parameter with a default.
 %
+%    If the Naka-Rushton field of the parameters struct is not there
+%    (determined by checking for crfAmp), then the returned responses are
+%    the equivalent contrasts directly, with no NR function applied.
+%
 % Inputs:
 %      params        - QCM model parameter struct
 %      stimuli       - Stimuli, with stimulus contrasts in columns
@@ -30,6 +34,11 @@ function [responses,quadraticFactors] = tfeQCMForward(params,stimuli)
 % History:
 %   11/24/19  dhb    Wrote it for modularity.
 %             dhb    Enforce constraint on minor axis.
+%   11/19/20  dhb    Change convention on parameters, so minor axis is
+%                    scaled as expected.  This is done by passing 1/param
+%                    rather than param to EllipsoidMatricesGenerate.
+%             dhb    Return equivalent contrasts if NR parameters not
+%                    passed.
 
 %% Method switch N
 methodSwitchN = 500;
@@ -41,7 +50,25 @@ end
 
 %% Get the ellipsoid parameters in cannonical form
 dimension = size(stimuli,1);
-[~,~,Q] = EllipsoidMatricesGenerate([1 params.Qvec]','dimension',dimension);
+if (dimension == 2)
+    % Protect against divide by zero
+    if (params.Qvec(1) < 1e-6)
+        params.Qvec(1) = 1e-6;
+    end
+    [~,~,Q] = EllipsoidMatricesGenerate([1 1/params.Qvec(1) params.Qvec(2)]','dimension',dimension);
+
+elseif (dimension == 3)
+     % Protect against divide by zero
+    if (params.Qvec(1) < 1e-6)
+        params.Qvec(1) = 1e-6;
+    end
+    if (params.Qvec(2) < 1e-6)
+        params.Qvec(2) = 1e-6;
+    end
+    [~,~,Q] = EllipsoidMatricesGenerate([1 1./params.Qvec(1:2) params.Qvec(3:end)]','dimension',dimension);
+else
+    error('Dimension must be 2 or 3');
+end
 
 %% Find the length of the points after application of the quadratic
 %
@@ -78,7 +105,14 @@ else
 end
 
 %% Push the quadratic response through a Naka-Rushton non-linearity
-responses = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],equivalentContrasts) + params.crfOffset;
+%
+% Only do this if NR parameters are there.  Otherwise return equivalent
+% contrasts.
+if (isfield(params,'crfAmp'))
+    responses = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],equivalentContrasts) + params.crfOffset;
+else
+    responses = equivalentContrasts;
+end
 
 %% Conceptually
 % responses = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],quadraticFactors.*stimulusContrasts) + params.crfOffset;
