@@ -48,7 +48,14 @@ classdef tfeLCMDirection < tfeQCM
         criterionResp = 1;
         
         % Angle support
-        angleSupport = 0:1:360;
+        angleSupport = 1:1:360;
+        
+        % Mechanisms
+        underlyingChannels;
+        
+        % Cache stimuli in desired form for fitting here
+        angles = [];
+        contrasts = [];
         
     end
     
@@ -94,8 +101,8 @@ classdef tfeLCMDirection < tfeQCM
             %
             % Set channel center points
             centerSpacing = 360/obj.nChannels;
-            centerLocations = obj.startCenter:centerSpacing:360-centerSpacing+params.startCenter;
-            for ii = 1:params.nChannels
+            centerLocations = obj.startCenter:centerSpacing:360-centerSpacing+obj.startCenter;
+            for ii = 1:obj.nChannels
                 obj.underlyingChannels(ii,:) = cosd(obj.angleSupport-centerLocations(ii));
                 obj.underlyingChannels(ii,sign(obj.underlyingChannels(ii,:)) == -1) = 0;
                 obj.underlyingChannels(ii,:) = obj.underlyingChannels(ii,:).^2;

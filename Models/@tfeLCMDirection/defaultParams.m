@@ -23,7 +23,7 @@ p.parse(varargin{:});
 if (isempty(p.Results.defaultParams))
   
     % Initial weights
-    params.channelWeightsPos = ones(obj.nChannels/2,1)';
+    params.channelWeightsPos = ones(obj.nChannels/2-1,1)';
     
     % The Naka-Rushton
     params.crfAmp = 1;

@@ -22,8 +22,8 @@ params = p.Results.params;
 switch (p.Results.PrintType)
     case 'standard'
         fprintf('Channel weights (positive arm):\n');
-        for ii = 1:obj.nChannels/2
-            fprintf('Weight %d: %0.2g\n',params.channelWeightsPos(ii));
+        for ii = 1:obj.nChannels/2-1
+            fprintf('\tWeight %d: %0.2g\n',ii,params.channelWeightsPos(ii));
         end
 
         fprintf('CRF amplitude: %0.2f, CRF semi-saturation: %0.2f, CRF exponent: %0.2f\n',params.crfAmp,params.crfSemi,params.crfExponent);

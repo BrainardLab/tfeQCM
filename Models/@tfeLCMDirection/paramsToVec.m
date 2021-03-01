@@ -21,18 +21,18 @@ if (obj.dimension ~= 2)
 end
 
 % Expand-eroo!
-for i = 1:obj.nChannels/2
+for i = 1:obj.nChannels/2-1
     x(i) = params.channelWeightsPos(i);
 end
-x(obj.nChannels/2+1) = params.crfAmp;
-x(obj.nChannels/2+2) = params.crfExponent;
-x(obj.nChannels/2+3) = params.crfSemi;
-x(pobj.nChannels/2+4) = params.expFalloff;
-x(obj.nChannels/2+5) = params.crfOffset;
+x(obj.nChannels/2) = params.crfAmp;
+x(obj.nChannels/2+1) = params.crfExponent;
+x(obj.nChannels/2+2) = params.crfSemi;
+x(obj.nChannels/2+3) = params.expFalloff;
+x(obj.nChannels/2+4) = params.crfOffset;
 
 % Optional inclusion of noise
 if (p.Results.UseNoiseParam)
-    x(obj.nChannels/2+6) = params.noiseSd;
+    x(obj.nChannels/2+5) = params.noiseSd;
 end
 
 % Transpose to match convention

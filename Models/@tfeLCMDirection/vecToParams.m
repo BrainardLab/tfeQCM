@@ -22,16 +22,16 @@ if (obj.dimension ~= 2)
     error('LCM only implemented in 2 dimensions');
 end
 
-params.channelWeightsPos = x(1:obj.nChannels/2)';
-params.crfAmp = x(obj.nChannels/2+1);
-params.crfExponent = x(obj.nChannels/2+2);
-params.crfSemi = x(obj.nChannels/2+3);
-params.expFalloff = x(obj.nChannels/2+4);
-params.crfOffset = x(obj.nChannels/2+5);
+params.channelWeightsPos = x(1:obj.nChannels/2-1)';
+params.crfAmp = x(obj.nChannels/2);
+params.crfExponent = x(obj.nChannels/2+1);
+params.crfSemi = x(obj.nChannels/2+2);
+params.expFalloff = x(obj.nChannels/2+3);
+params.crfOffset = x(obj.nChannels/2+4);
 
 % Optional inclusion of noise
 if (p.Results.UseNoiseParam)
-    params.noiseSd = x(obj.nChannels/2+6);
+    params.noiseSd = x(obj.nChannels/2+5);
 end
         
 end
