@@ -5,6 +5,7 @@
 %
 % 2/16/21  dhb Finish up and add comments
 % 2/22/21  dhb Modularize the functions.
+% 2/23/21  dhb Fix some bugs, finalize
 
 %% Clear
 clear; close all;
@@ -12,22 +13,31 @@ clear; close all;
 %% Set channel parameters
 %
 % channelType, choices are:
-%   'BHSin2'           - Brouwer and Heeger 6 sin^2 channels
-%   'OpponentSin2'     - Two opponent sin^2 channels
-%   'OpponentLin2'     - Linear combination of cones, then squared
-channelType = 'OpponentLin2';
+%   'BH_6_Sin2'        - Brouwer and Heeger 6 sin^2 channels, which respond linearly.
+%   'BH_6_Lin2'        - Linear then squared version of BH_6_Sin2 model
+%   'BH_4_Sin2'        - Brouwer and Heeger 4 sin^2 channels, which respond linearly.
+%   'BH_4_Lin2'        - Linear then squared version of BH_4_Sin2 model.
+%   'BH_8_Sin2'        - Brouwer and Heeger 8 sin^2 channels, which respond linearly.
+%   'BH_8_Lin2'        - Linear then squared version of BH_8_Sin2 model
+%   'OpponentCone2'    - Linear combination of cones, outpus then squared and added
+channelType = 'BH_8_Lin2';
 switch (channelType)
-    case 'BHSin2'
+    case {'BH_6_Sin2', 'BH_6_Lin2'}
         nChannels = 6;
         startCenter = 0;
         theChannelWeightsPos = [0.2 0.4 0.6]';
         
-    case 'OpponentSin2'
+    case {'BH_4_Sin2', 'BH_4_Lin2'}
         nChannels = 4;
         startCenter = 45;
         theChannelWeightsPos = [0.2 0.8]';
         
-    case 'OpponentLin2'
+    case {'BH_8_Sin2', 'BH_8_Lin2'}
+        nChannels = 8;
+        startCenter = 0;
+        theChannelWeightsPos = [0.2 0.8 0.3 0.1]';
+        
+    case 'OpponentCone2'
         nChannels = 4;
         coneContrastWeights = [ [1 1]' [1 -1]' [-1 -1]' [-1 1]' ];
         %coneContrastWeights = [ [1 0]' [0 1]' [-1 0]' [0 -1]' ];
@@ -36,21 +46,26 @@ switch (channelType)
         error('Unknown channelType specified');
 end
 
+%% Ellipse parameters
+angle = 45;         % Angle
+aspectRatio = 0.15; % Minor axis aspect ratio
+
 % Check
 if (rem(nChannels,2) ~= 0)
     error('nChannels must be even');
 end
 
 % Set criterion response
-criterionResp = 1;
+criterionResp = 2;
 
 %% Create channel tuning
 angleSupport = 0:1:360;
 switch (channelType)
-    case {'BHSin2', 'OpponentSin2'}
+    case {'BH_6_Sin2', 'BH_6_Lin2', 'BH_4_Sin2', 'BH_4_Lin2', 'BH_8_Sin2', 'BH_8_Lin2'}
         % These have tuning described as half wave rectified sinusoids
         % squared. Compute response to unit contrast in each color
-        % direction.
+        % direction by regarding these as linear channels tuned to hue
+        % angle.
         %
         % Set channel center points
         centerSpacing = 360/nChannels;
@@ -59,10 +74,15 @@ switch (channelType)
         for ii = 1:nChannels
             underlyingChannels(ii,:) = cosd(angleSupport-centerLocations(ii));
             underlyingChannels(ii,sign(underlyingChannels(ii,:)) == -1) = 0;
-            underlyingChannels(ii,:) = underlyingChannels(ii,:).^2;
+            switch (channelType)
+                case {'BH_6_Sin2', 'BH_4_Sin2', 'BH_8_Sin2'}
+                    underlyingChannels(ii,:) = underlyingChannels(ii,:).^2;
+            end
         end
         
-        % Just for fun, create a single linear channel as a weighted combination of the underlying channels
+        % Just for fun, create a single linear channel as a weighted combination
+        % of the underlying channels.  This is mainly to look at a sample
+        % isoresponse contour created from this model.
         %
         % Since we use symmetric modulations in our experiments, we'll keep
         % this symmetric.  We specify the first three weights and then duplicat
@@ -81,8 +101,10 @@ switch (channelType)
         
         % And then get isoresponse contour from the sensitivity we created
         % and also plot this.
-        scalar = 1;
-        theChannelIsoContrast = ChannelWeightsPosToIsoContrast([theChannelWeightsPos ; 1],underlyingChannels,criterionResp,channelType);
+        [theChannelIsoContrast,theChannelIsoResp] = ChannelWeightsPosToIsoContrast(theChannelWeightsPos,angleSupport,underlyingChannels,criterionResp,channelType);
+        if (max(abs(theChannelIsoResp-criterionResp)) > 1e-6)
+            error('Fit iso ontrast does not produce criterion response');
+        end
         subplot(1,2,2); hold on;
         plot(theChannelIsoContrast.*cosd(angleSupport),theChannelIsoContrast.*sind(angleSupport),'k','LineWidth',2);
         axis('square');
@@ -90,10 +112,11 @@ switch (channelType)
         ylabel('Cone 2 Contrast');
         title('Channel IsoContrast');
         
-    case {'OpponentLin2'}
+    case {'OpponentCone2'}
         % These are linear combinations of the cone contrasts.  Compute
-        % response to unit contrast in each direction, half wave rectifid
-        % and squared.
+        % response to unit contrast in each direction, half wave rectified
+        % but not squared.  For this thread, we do the squaring as part of
+        % the linear combination across channels.
         for ii = 1:nChannels
             for jj = 1:length(angleSupport)
                 cone1Contrast = cosd(angleSupport(jj));
@@ -107,8 +130,7 @@ switch (channelType)
         error('Unknown channelType specified');
 end
 
-
-% Plot channel sensitivities
+%% Plot channel sensitivities
 figure; clf; hold on
 colors = ['r' 'g' 'k' 'b' 'y' 'c'];
 colorIndex = 1;
@@ -125,10 +147,6 @@ ylabel('Sensitivity');
 title('Channel Sensitivities');
 
 %% Generate an elliptical isoresponse contour and plot
-%
-% Set ellipse parameters
-angle = 45;         % Angle
-aspectRatio = 0.15; % Minor axis aspect ratio
 ellipticalIsoContrast = EllipticalIsoContrast(angle,aspectRatio,angleSupport,criterionResp);
 
 % Plot
@@ -137,77 +155,101 @@ plot(ellipticalIsoContrast.*cosd(angleSupport),ellipticalIsoContrast.*sind(angle
 axis('square');
 
 %% If we have an isoresponse contour, we can solve for the channel weights
-[isoContrastPred,weightsPosPred,isoContrastPred0] = FitIsoContrast(ellipticalIsoContrast,underlyingChannels,criterionResp,channelType);
+[ellipticalIsoContrastFit,ellipticalIsoReponseFit,weightsPosPred,isoContrastPred0] = FitIsoContrast(ellipticalIsoContrast,angleSupport,underlyingChannels,criterionResp,channelType);
+if (max(abs(ellipticalIsoReponseFit-criterionResp)) > 1e-6)
+    error('Fit iso ontrast does not produce criterion response');
+end
 
 % Get the starting isoresonse contrasts and add to plot.
 %plot(isoContrastPred0.*cosd(angleSupport),isoContrastPred0.*sind(angleSupport),'g:','LineWidth',2);
 
-plot(isoContrastPred.*cosd(angleSupport),isoContrastPred.*sind(angleSupport),'r:','LineWidth',2);
+% Add resulting isoresponse contour to the plot
+plot(ellipticalIsoContrastFit.*cosd(angleSupport),ellipticalIsoContrastFit.*sind(angleSupport),'r:','LineWidth',2);
 axis('square');
+xlim([-2 2]); ylim([-2 2]);
 xlabel('Cone 1 Contrast');
 ylabel('Cone 2 Contrast');
 title('IsoContrast');
 
 %% ChannelWeightsPosToIsoContrast
-function isoContrast = ChannelWeightsPosToIsoContrast(theChannelWeightsPos,underlyingChannels,criterionResp,channelType)
+function [isoContrast,isoResp] = ChannelWeightsPosToIsoContrast(theChannelWeightsPos,angleSupport,underlyingChannels,criterionResp,channelType)
 
-isoContrast = ChannelWeightsToIsoContrast([theChannelWeightsPos(1:end-1) ; theChannelWeightsPos(1:end-1) ; theChannelWeightsPos(end)],underlyingChannels,criterionResp,channelType);
+[isoContrast,isoResp] = ChannelWeightsToIsoContrast([theChannelWeightsPos ; theChannelWeightsPos],angleSupport,underlyingChannels,criterionResp,channelType);
 
 end
 
 %% ChannelWeightsToIsoContrast
-%
-% For each stimulus direction response is given
+function [isoContrast,isoResp] = ChannelWeightsToIsoContrast(theChannelWeights,angleSupport,underlyingChannels,criterionResp,channelType)
+
+% Get channel response to unit contrast in each angular direction
+unitContrast = ones(size(angleSupport));
+theChannelResp = ChannelWeightsToChannelResponse(theChannelWeights,unitContrast,underlyingChannels,channelType);
+
+% Get isocontrast.  The sin^2 tuned channels respond linearly with
+% contrast, so for each stimulus direction response is given
 % by stimulus magnitude times sensitivity in that
 % direction. That is:
-%   resp = theChannel*stimMag
-% So for stimuli in just one direction theta,%
-%   theChannelIsoContrast = resp/theChannel(theta);
+%   resp = theConrast.*theChannel*stimMag
+% So for stimuli in just one direction theta, the contrast to produce a
+% given response is:
+%   theContrast = resp/theChannel(theta);
 %
 % We can get the stimulus magnitude for the channel
 % above by inverting this equation.
-function isoContrast = ChannelWeightsToIsoContrast(theChannelWeights,underlyingChannels,criterionResp,channelType)
+%
+% The linear squared channels are a little different, but we do return the
+% square root of the summed squared response for those, so that response
+% is linearly proportional to contrast in each direction.  That means the
+% same formula applies.
+isoContrast = criterionResp./theChannelResp;
+isoResp = ChannelWeightsToChannelResponse(theChannelWeights,isoContrast,underlyingChannels,channelType);
 
+end
+
+%% ChannelWeightsPosToChannelResponse
+function [theChannelResp] = ChannelWeightsPosToChannelResponse(theChannelWeightsPos,theContrast,underlyingChannels,channelType)
+
+% Expand weights full set of channels and pass to full routine.  Need to be
+% a little careful about the extra parameter that is tacked onto the end.
+theChannelResp = ChannelWeightsToChannelResponse([theChannelWeightsPos ; theChannelWeightsPos],theContrast,underlyingChannels,channelType);
+
+end
+
+%% ChannelWeightsToChannelResponse
+function [theChannelResp] = ChannelWeightsToChannelResponse(theChannelWeights,theContrast,underlyingChannels,channelType)
+    
 switch (channelType)
-    case {'BHSin2', 'OpponentSin2'}
+    case {'BH_6_Sin2', 'BH_4_Sin2', 'BH_8_Sin2'}
         
         % Form overall channel sensitivity as linear combination of
         % underlying channels.
-        theChannelResp = theChannelWeights(end)*(underlyingChannels'*theChannelWeights(1:end-1))';
-               
-        % Avoid divide by zero
-        theChannelResp(abs(theChannelResp) < 1e-6) = 1e-6;
+        theChannelResp = theContrast .* (underlyingChannels'*theChannelWeights)';
 
-        % Get isocontrast
-        isoContrast = criterionResp./theChannelResp;
-
-    case {'OpponentLin2'}
+    case {'OpponentCone2', 'BH_6_Lin2', 'BH_4_Lin2', 'BH_8_Lin2'}
+        % Collapse underlying channels.  This just turns the rectified linear
+        % channels back into full (unrectified) linear channels.
         nChannels = size(underlyingChannels,1);
-        if (nChannels ~= 4)
-            error('This model is specific for four single-ended channels in two pairs');
+        for ii = 1:nChannels/2
+            linChannels(ii,:) = underlyingChannels(ii,:)-underlyingChannels(ii+nChannels/2,:);
         end
-        
-        % Collapse to two channels
-        twoChannels(1,:) = underlyingChannels(1,:)-underlyingChannels(3,:);
-        twoChannels(2,:) = underlyingChannels(2,:)-underlyingChannels(4,:);
-        
+
         % Compute the quadratic response.  This is the ellipse quadratic
         % form, with no constraint of positive definite.
-        theChannelResp = (theChannelWeights(1)*twoChannels(1,:).^2) + ...
-                         (theChannelWeights(2)*twoChannels(2,:).^2) + ...
-                         (2*theChannelWeights(end)*twoChannels(1,:).*twoChannels(2,:));
+        theChannelResp2 = 0;
+        for ii = 1:nChannels/2
+            theChannelResp2 = theChannelResp2 + (theChannelWeights(ii)*(theContrast.*linChannels(ii,:)).^2);
+        end
                      
-                           
-        % Avoid divide by zero
-        theChannelResp(abs(theChannelResp) < 1e-6) = 1e-6;
-
-        % Get isocontrast
-        isoContrast = sqrt(criterionResp./theChannelResp);
-          
+        % Take square root at the end so that response is proportional to
+        % contrast.
+        theChannelResp = sqrt(theChannelResp2);
+      
     otherwise
         error('Unknown channelType specified');
 end
-
+                       
+% Avoid divide by zero in later calculations
+theChannelResp(abs(theChannelResp) < 1e-6) = 1e-6;
 
 end
 
@@ -215,7 +257,7 @@ end
 %
 % Use fmincon to find weights that produce isoresponse contour closest
 % to the specified one.
-function [isoContrastPred,weightsPosPred,isoContrastPred0] = FitIsoContrast(isoContrast,underlyingChannels,criterionResp,channelType)
+function [isoContrastPred,isoRespPred,weightsPosPred,isoContrastPred0] = FitIsoContrast(isoContrast,angleSupport,underlyingChannels,criterionResp,channelType)
 
 % You need to make a good guess about the initial weights for the search to
 % converge. So, find initial weights using regression.  We find all x
@@ -229,7 +271,7 @@ nChannels = size(underlyingChannels,1);
 
 % Slightly different heuristics used depending on model type.
 switch (channelType)
-    case {'BHSin2', 'OpponentSin2'}
+    case {'BH_6_Sin2', 'BH_4_Sin2', 'BH_8_Sin2'}
         weightsRegress0 = ((underlyingChannels)'\(criterionResp./isoContrast'));
         weightsPos0 = zeros(nChannels/2,1);
         for ii = 1:nChannels/2
@@ -237,12 +279,8 @@ switch (channelType)
         end
         vlb = -1e6*ones(nChannels/2,1);
         vub = 1e6*ones(nChannels/2,1);
-        
-        scalar0 = 1;
-        weightsPos0 = [weightsPos0 ; scalar0];
-        vlb = [vlb ; 1];
-        vub = [vub ; 1];
-    case {'OpponentLin2'}
+     
+    case {'OpponentCone2', 'BH_6_Lin2', 'BH_4_Lin2', 'BH_8_Lin2'}
         weightsRegress0 = ((underlyingChannels)'\(criterionResp./isoContrast'));
         weightsPos0 = zeros(nChannels/2,1);
         for ii = 1:nChannels/2
@@ -251,51 +289,31 @@ switch (channelType)
         %weightsPos0(2) = weightsPos0(2)*4;
         vlb = 0*ones(nChannels/2,1);
         vub = 1e6*ones(nChannels/2,1);
-        
-        scalar0 = 0;
-        weightsPos0 = [weightsPos0 ; scalar0];
-        vlb = [vlb ; -1e6];
-        vub = [vub ; 1e6];
-        % vlb = [vlb ; scalar0];
-        % vub = [vub ; scalar0];
-        
-        Q0(1,1) = weightsPos0(1);
-        Q0(2,2) = weightsPos0(2);
-        Q0(1,2) = weightsPos0(3);
-        Q0(2,1) = Q0(1,2);
-        fprintf('Initial Q det: %g\n',det(Q0));
-        
-
+       
     otherwise
         error('Unknown channelType specified');
 end
 
 % Initial prediction (useful for debugging)
-[~,isoContrastPred0] = FitIsoContrastFun(weightsPos0,underlyingChannels,isoContrast,criterionResp,channelType);
+[~,isoContrastPred0] = FitIsoContrastFun(weightsPos0,angleSupport,underlyingChannels,isoContrast,criterionResp,channelType);
 
 % Search
 options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display','iter','LargeScale','off','Algorithm','active-set');
-weightsPosPred = fmincon(@(weightsPos)FitIsoContrastFun(weightsPos,underlyingChannels,isoContrast,criterionResp,channelType),weightsPos0,[],[],[],[],vlb,vub,[],options);
-
-Q(1,1) = weightsPosPred(1);
-Q(2,2) = weightsPosPred(2);
-Q(1,2) = weightsPosPred(3);
-Q(2,1) = Q(1,2);
-fprintf('Final Q det: %g\n',det(Q));
+options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set');
+weightsPosPred = fmincon(@(weightsPos)FitIsoContrastFun(weightsPos,angleSupport,underlyingChannels,isoContrast,criterionResp,channelType),weightsPos0,[],[],[],[],vlb,vub,[],options);
 
 % Get prediction
-[~,isoContrastPred] = FitIsoContrastFun(weightsPosPred,underlyingChannels,isoContrast,criterionResp,channelType);
+[~,isoContrastPred,isoRespPred] = FitIsoContrastFun(weightsPosPred,angleSupport,underlyingChannels,isoContrast,criterionResp,channelType);
 
 end
 
 %% FitIsoContrastFun
 %
 % Error function for search
-function [f,isoContrastPred] = FitIsoContrastFun(theChannelWeightsPos,underlyingChannels,isoContrast,criterionResp,channelType)
+function [f,isoContrastPred,isoRespPred] = FitIsoContrastFun(theChannelWeightsPos,angleSupport,underlyingChannels,isoContrast,criterionResp,channelType)
 
 % Get predicted isoresponse contour
-isoContrastPred = ChannelWeightsPosToIsoContrast(theChannelWeightsPos,underlyingChannels,criterionResp,channelType);
+[isoContrastPred,isoRespPred] = ChannelWeightsPosToIsoContrast(theChannelWeightsPos,angleSupport,underlyingChannels,criterionResp,channelType);
 
 % Take RMSE with what is being fit
 f = 100*sqrt(sum((isoContrastPred-isoContrast).^2)/length(isoContrast));
