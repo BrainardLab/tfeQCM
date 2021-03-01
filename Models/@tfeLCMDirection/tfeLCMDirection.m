@@ -38,6 +38,18 @@ classdef tfeLCMDirection < tfeQCM
 
     % Public, read-only properties.
     properties (SetAccess = private, GetAccess = public)
+        % Number of unipolar channels
+        nChannels = 6;
+        
+        % Channel center start
+        startCenter = 0;
+        
+        % Criterion response to go from response to isocontour      
+        criterionResp = 1;
+        
+        % Angle support
+        angleSupport = 0:1:360;
+        
     end
     
     % Private properties. Only methods of the parent class can set these
@@ -55,24 +67,41 @@ classdef tfeLCMDirection < tfeQCM
     % but we put the constructor here.
     methods (Access=public)
         % Constructor
-        function obj = tfeQCMDirection(varargin)
-           
+        function obj = tfeLCMDirection(varargin)
+            
             % Parse input. Need to add any key/value pairs that need to go
             % to the tfe parent class, as well as any that are LCM
             % specific.
             p = inputParser; p.KeepUnmatched = true;
-            p.addParameter('dimension',3,@(x) (isnumeric(x) & isscalar(x)));
-            p.parse(varargin{:});
-            
-            % Check dimension
-            if (p.Results.dimension ~= 2)
-                error('The LCM model only works in two dimensions');
-            end
             
             % Base class constructor
             obj = obj@tfeQCM(varargin{:});
+            
+            % Checks
+            if (obj.dimension ~= 2)
+                error('The LCM model only works in two dimensions');  
+            end
+            if (rem(obj.nChannels,2) ~= 0)
+                error('nChannels must be even');
+            end
+            
+            % Create the channels
+            %
+            % These have tuning described as half wave rectified sinusoids
+            % squared. Compute response to unit contrast in each color
+            % direction by regarding these as linear channels tuned to hue
+            % angle.
+            %
+            % Set channel center points
+            centerSpacing = 360/obj.nChannels;
+            centerLocations = obj.startCenter:centerSpacing:360-centerSpacing+params.startCenter;
+            for ii = 1:params.nChannels
+                obj.underlyingChannels(ii,:) = cosd(obj.angleSupport-centerLocations(ii));
+                obj.underlyingChannels(ii,sign(obj.underlyingChannels(ii,:)) == -1) = 0;
+                obj.underlyingChannels(ii,:) = obj.underlyingChannels(ii,:).^2;
+            end
         end
-    end 
+    end
     
     % Get methods for dependent properties
     methods

@@ -5,6 +5,8 @@ function x = paramsToVec(obj,params,varargin)
 %
 % Key/value pairs
 %   'UseNoiseParam' - true/false (default false).  Use the noise parameter?
+%
+% 03/01/21  dhb  Wrote it from QCM version.
 
 % Parse input.
 p = inputParser;
@@ -19,18 +21,18 @@ if (obj.dimension ~= 2)
 end
 
 % Expand-eroo!
-for i = 1:params.nChannels/2
+for i = 1:obj.nChannels/2
     x(i) = params.channelWeightsPos(i);
 end
-x(params.nChannels/2+1) = params.crfAmp;
-x(params.nChannels/2+2) = params.crfExponent;
-x(params.nChannels/2+3) = params.crfSemi;
-x(params.nChannels/2+4) = params.expFalloff;
-x(params.nChannels/2+5) = params.crfOffset;
+x(obj.nChannels/2+1) = params.crfAmp;
+x(obj.nChannels/2+2) = params.crfExponent;
+x(obj.nChannels/2+3) = params.crfSemi;
+x(pobj.nChannels/2+4) = params.expFalloff;
+x(obj.nChannels/2+5) = params.crfOffset;
 
 % Optional inclusion of noise
 if (p.Results.UseNoiseParam)
-    x(params.nChannels/2+6) = params.noiseSd;
+    x(obj.nChannels/2+6) = params.noiseSd;
 end
 
 % Transpose to match convention
