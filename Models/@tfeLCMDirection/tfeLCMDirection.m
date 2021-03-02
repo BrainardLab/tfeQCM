@@ -29,6 +29,12 @@ classdef tfeLCMDirection < tfeQCM
 %    'dimension' - The dimension of the stimuli. Can be 2 or 3. Default
 %                  3, but this only works if it is set to 2. (Not entirely
 %                  clear how to build the channesl in a 3D angular space.)
+%    'nChannels' - Number of cos^2 angular tuning linear channels.  Scalar.
+%                  Default 6.
+%    'startCenter' - Angle of center of first channel in degrees. Scalar.
+%                  Default 0.
+%    'criterionResp' - Criterion response for isoresponse controu. Scalar.
+%                  Default 1.
 %
 % See also:
 %
@@ -39,13 +45,13 @@ classdef tfeLCMDirection < tfeQCM
     % Public, read-only properties.
     properties (SetAccess = private, GetAccess = public)
         % Number of unipolar channels
-        nChannels = 6;
+        nChannels = [];
         
         % Channel center start
-        startCenter = 0;
+        startCenter = [];
         
         % Criterion response to go from response to isocontour      
-        criterionResp = 1;
+        criterionResp = [];
         
         % Angle support
         angleSupport = 1:1:360;
@@ -80,9 +86,18 @@ classdef tfeLCMDirection < tfeQCM
             % to the tfe parent class, as well as any that are LCM
             % specific.
             p = inputParser; p.KeepUnmatched = true;
-            
+            p.addParameter('nChannels',6,@(x) (isnumeric(x) & isscalar(x)));
+            p.addParameter('startCenter',0,@(x) (isnumeric(x) & isscalar(x)));
+            p.addParameter('criterionResp',1,@(x) (isnumeric(x) & isscalar(x)));
+            p.parse(varargin{:});
+                        
             % Base class constructor
             obj = obj@tfeQCM(varargin{:});
+            
+            % Set basic parameters
+            obj.nChannels = p.Results.nChannels;
+            obj.startCenter = p.Results.startCenter;
+            obj.criterionResp = p.Results.criterionResp;
             
             % Checks
             if (obj.dimension ~= 2)
@@ -91,6 +106,8 @@ classdef tfeLCMDirection < tfeQCM
             if (rem(obj.nChannels,2) ~= 0)
                 error('nChannels must be even');
             end
+            
+
             
             % Create the channels
             %

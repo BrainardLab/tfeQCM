@@ -4,8 +4,9 @@
 %   This script synthesizes data for the LCM model and then fits it,
 %   to ensure that we can get back what we put in.  Etc.
 % 
-%   Note that this is developed for the two-dimensional version.
-%
+%   The parameters used to synthesize the data were just pulled out of a
+%   hat, so there is no particular expected shape the resulting isoresponse
+%   contour.
 
 % History:
 %   03/01/21  dhb       Wrote from QCM test version.
@@ -108,7 +109,7 @@ thePacket.metaData = [];
 fprintf('\nLCM parameters from fit:\n');
 LCMObj.paramPrint(fitLCMParams)
 
-%%  Check that the fit recovers the responses we put in to reasonable approximation
+%% Check that the fit recovers the responses we put in to reasonable approximation
 %
 % This will break if we simulate too much noise
 fitLCMResponseStruct = LCMObj.computeResponse(fitLCMParams,directionStimulusStruct,[],'addNoise',false);
@@ -116,6 +117,14 @@ if (max(abs(fitLCMResponseStruct.values-LCMResponseStruct.values)/max(LCMRespons
     error('Fit does not do a good job of recovering responses');
 end
 
+%% Get and plot isoresponse contour
+[isoContrastFit,unitContrastResponseFit,angleSupport] = LCMObj.getIsoContrast(fitLCMParams);
+plot(isoContrastFit.*cosd(angleSupport),isoContrastFit.*sind(angleSupport),'r','LineWidth',2);
+axis('square');
+xlim([-2 2]); ylim([-2 2]);
+xlabel('Cone 1 Contrast');
+ylabel('Cone 2 Contrast');
+title('IsoContrast');
 
 
 
