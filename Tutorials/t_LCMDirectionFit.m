@@ -31,9 +31,7 @@ else
 end
 
 % Weight parameters
-%
-% First channel weight is implicitly 1
-channelWeightsPos = [0.6 0.2];
+channelWeightsPos = [1 0.6 0.2];
 
 %% Set up LCM matching parameters above
 %

@@ -70,7 +70,7 @@ end
 % Since we use symmetric modulations in our experiments, we'll keep
 % this symmetric.  We specify the first three weights and then duplicat
 % for the second three.
-theChannelWeights = [[1 params.channelWeightsPos]' ; [1 params.channelWeightsPos]'];
+theChannelWeights = [[params.channelWeightsPos]' ; [params.channelWeightsPos]'];
 theChannel = (obj.underlyingChannels'*theChannelWeights)';
 
 %% Get linear response from LCM params
