@@ -12,8 +12,8 @@ function paramsOut = scaleIsoContrast(obj,params,scalar,varargin)
 % Parse input.
 p = inputParser;
 p.addRequired('params',@isstruct);
-p.parse(params,varargin{:});
-params = p.Results.params;
+p.addRequired('scalar',@isnumeric);
+p.parse(params,scalar,varargin{:});
 
 % Dimension check
 if (obj.dimension ~= 2)
@@ -29,6 +29,5 @@ end
 paramsOut = params;
 paramsOut.channelWeightsPos = params.channelWeightsPos/scalar;
 paramsOut.crfSemi = params.crfSemi/scalar;
-
 
 end

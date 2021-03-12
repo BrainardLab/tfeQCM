@@ -116,6 +116,7 @@ if (max(abs(fitLCMResponseStruct.values-LCMResponseStruct.values)/max(LCMRespons
 end
 
 %% Get and plot isoresponse contour
+figure; hold on
 [isoContrastFit,unitContrastResponseFit,angleSupport] = LCMObj.getIsoContrast(fitLCMParams);
 plot(isoContrastFit.*cosd(angleSupport),isoContrastFit.*sind(angleSupport),'r','LineWidth',2);
 axis('square');
@@ -123,6 +124,11 @@ xlim([-2 2]); ylim([-2 2]);
 xlabel('Cone 1 Contrast');
 ylabel('Cone 2 Contrast');
 title('IsoContrast');
+
+%% Scale isocontrast contour and replot
+fitLCMParamsScale = LCMObj.scaleIsoContrast(fitLCMParams,0.5);
+[isoContrastScale] = LCMObj.getIsoContrast(fitLCMParamsScale);
+plot(isoContrastScale.*cosd(angleSupport),isoContrastScale.*sind(angleSupport),'b','LineWidth',2);
 
 
 

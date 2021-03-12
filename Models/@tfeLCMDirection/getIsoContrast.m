@@ -37,7 +37,7 @@ params = p.Results.params;
 % Since we use symmetric modulations in our experiments, we'll keep
 % this symmetric.  We specify the first three weights and then duplicat
 % for the second three.
-theChannelWeights = [[1 params.channelWeightsPos]' ; [1 params.channelWeightsPos]'];
+theChannelWeights = [[params.channelWeightsPos]' ; [params.channelWeightsPos]'];
 theChannel = (obj.underlyingChannels'*theChannelWeights)';
 
 % Response around circle to unit contrast is just the channel sensitivity
