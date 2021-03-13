@@ -147,7 +147,7 @@ ylabel('Sensitivity');
 title('Channel Sensitivities');
 
 %% Generate an elliptical isoresponse contour and plot
-ellipticalIsoContrast = EllipticalIsoContrast(angle,aspectRatio,angleSupport,criterionResp);
+ellipticalIsoContrast = tfeEllipticalIsoContrast(angle,aspectRatio,angleSupport,criterionResp);
 
 % Plot
 figure; clf; hold on;
@@ -320,41 +320,4 @@ f = 100*sqrt(sum((isoContrastPred-isoContrast).^2)/length(isoContrast));
 
 end
 
-%% EllipticalIsoContrast
-%
-% Generate an elliptical isoresponse contour.
-%
-% This is pulled from earlier code we developed to check
-% the appendix in the paper, t_EllipseCheck
-function isoContrast = EllipticalIsoContrast(angle,aspectRatio,angleSupport,criterionResp)
-
-% Set up matrices V and S
-V = [cosd(angle) -sind(angle) ; sind(angle) cosd(angle)];
-S = [1 0 ; 0 1/aspectRatio];
-
-% Compute A and Q
-A = S'*V';
-Q = A'*A;
-
-% Points on the ellipse satisfy c'*Q*c = resp^2;
-% One way to find the ellipse is to go around the circle and adjust to desired length
-resp2 = criterionResp^2;
-circleVecs = zeros(2,length(angleSupport));
-ellipseVecs = zeros(2,length(angleSupport));
-for tt = 1:length(angleSupport)
-    % Create a point on a circle
-    circleVecs(1,tt) = cosd(angleSupport(tt));
-    circleVecs(2,tt) = sind(angleSupport(tt));
-    
-    % Transform by scaling to produce a point on the ellipse
-    rawResp2 = circleVecs(:,tt)'*Q*circleVecs(:,tt);
-    ellipseVecs(:,tt) = sqrt(resp2)*circleVecs(:,tt)/sqrt(rawResp2);
-    
-    % Get vector length of point on ellipse (aka contrast).  This is
-    % the contrast at each stimulus direction angle that produces
-    % the constant criterion response.
-    isoContrast(tt) = norm(ellipseVecs(:,tt));
-end
-
-end
 
