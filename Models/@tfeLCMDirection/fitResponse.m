@@ -1,11 +1,20 @@
 function [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargin)
-% [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargin)
+% Fit LCM model to a packet.
 %
-% Fit method for the tfeLCM class.  This overrides the tfe method, allowing
-% a certain amount of customizaiton.
+% Synopsis:
+%    [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,varargin)
 %
-% Also eventually will allow us to put on some parameter constraints that
-% are not generic.
+% Description:
+%    Fit method for the tfeLCMDirection class.  This overrides the tfe method, allowing
+%    a certain amount of customizaiton.
+%
+%    Also eventually will allow us to put on some parameter constraints that
+%    are not generic.
+%
+%    Currently constrains thing by using vlb and vub passed to fmincon that
+%    keep the first channel coefficient at 1, implemented by the default
+%    parameters.  A better method would be to constrain the vector length of
+%    the channel weights, but this is good enough for our current purposes.
 %
 % Inputs:
 %   thePacket          - A valid packet
@@ -95,6 +104,14 @@ obj.angles = [];
 paramsFit = paramsFit1;
 fVal = fVal1;
 modelResponseStruct = modelResponseStruct1;
+
+% Sanity check
+for ii = 2:length(paramsFit.channelWeightsPos)/2
+    checkVal = paramsFit.channelWeightsPos(ii)/paramsFit.channelWeightsPos(1);
+    if (checkVal < 1e-4 | checkVal > 1e4)
+        error('Large asymmetry in fit channel weights. May be a symptom that locking first weight is not appropriate for this data set');
+    end
+end
 
 % Use this to check error value as it sits here
 fValCheck = obj.fitError(obj.paramsToVec(paramsFit),thePacket,varargin{:},'fitErrorScalar',p.Results.fitErrorScalar);
