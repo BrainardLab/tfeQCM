@@ -1,7 +1,8 @@
 function [isoContrast,unitContrastResponse,angleSupport] = getIsoContrast(obj,params,varargin)
 % [isoResponse,unitResponse,angleSupport] = getIsoContrast(obj,params,varargin)
 %
-% Get isoresponse contour for the LCM (linear channel model).
+% Synopsis:
+%   Get isoresponse contour for the LCM (linear channel model).
 %
 % Inputs:
 %   obj        - the tfeLCMDirection object

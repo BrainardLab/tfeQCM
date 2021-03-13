@@ -33,13 +33,22 @@ end
 % Weight parameters
 channelWeightsPos = [1 0.6 0.2];
 
+% Ellipse parameters.  Parameters here picked by hand so that
+% the scaled LCM isoresponse contour for the weights above
+% comes out pretty close.
+ellipseAngle = 105;         % Angle
+ellipseAspectRatio = 0.4;   % Minor axis aspect ratio
+
+% Criterion response for level of isoresponse contours
+criterionResponse = 1;
+
 %% Set up LCM matching parameters above
 %
 % Keep noise very small for testing
 if (LOCKEDOFFSET)
-    LCMObj = tfeLCMDirection('verbosity','none','dimension',theDimension,'lockedCrfOffset',offset);
+    LCMObj = tfeLCMDirection('verbosity','none','dimension',theDimension,'lockedCrfOffset',offset,'criterionResp',criterionResponse);
 else
-    LCMObj = tfeLCMDirection('verbosity','none','dimension',theDimension);
+    LCMObj = tfeLCMDirection('verbosity','none','dimension',theDimension,'criterionResp',criterionResponse);
 end
 paramsLCM = LCMObj.defaultParams;
 paramsLCM.channelWeightsPos = channelWeightsPos;
@@ -129,6 +138,70 @@ title('IsoContrast');
 fitLCMParamsScale = LCMObj.scaleIsoContrast(fitLCMParams,0.5);
 [isoContrastScale] = LCMObj.getIsoContrast(fitLCMParamsScale);
 plot(isoContrastScale.*cosd(angleSupport),isoContrastScale.*sind(angleSupport),'b','LineWidth',2);
+
+%% Compute responses with original and scaled parameters
+fitResponseStruct = LCMObj.computeResponse(fitLCMParams,directionStimulusStruct,[]);
+fitResponseStructScale = LCMObj.computeResponse(fitLCMParamsScale,directionStimulusStruct,[]);
+if (max(abs(fitResponseStruct.values-fitResponseStructScale.values)./fitResponseStruct.values) > 1e-9)
+    error('Scaling does not preserve response');
+end
+
+%% Generate an ellipsoidal isoresponse contour
+ellipticalIsoContrast = EllipticalIsoContrast(ellipseAngle,ellipseAspectRatio,LCMObj.angleSupport,LCMObj.criterionResp);
+
+%% Get parameters with model parameters scaled to produce best fit to elliptical contour
+fitLCMParamsScaledTOEllipse = LCMObj.scaleToFitIsoContrast(fitLCMParams,ellipticalIsoContrast);
+scaledToEllipseIsoContrast = LCMObj.getIsoContrast(fitLCMParamsScaledTOEllipse);
+
+% Plot
+figure; hold on
+plot(ellipticalIsoContrast.*cosd(angleSupport),ellipticalIsoContrast.*sind(angleSupport),'k','LineWidth',2);
+plot(isoContrastFit.*cosd(angleSupport),isoContrastFit.*sind(angleSupport),'r','LineWidth',2);
+plot(scaledToEllipseIsoContrast.*cosd(angleSupport),scaledToEllipseIsoContrast.*sind(angleSupport),'b','LineWidth',2);
+axis('square');
+xlim([-2 2]); ylim([-2 2]);
+xlabel('Cone 1 Contrast');
+ylabel('Cone 2 Contrast');
+title('IsoContrast');
+
+
+%% EllipticalIsoContrast
+%
+% Generate an elliptical isoresponse contour.
+%
+% This is pulled from earlier code we developed to check
+% the appendix in the paper, t_EllipseCheck
+function isoContrast = EllipticalIsoContrast(angle,aspectRatio,angleSupport,criterionResp)
+
+% Set up matrices V and S
+V = [cosd(angle) -sind(angle) ; sind(angle) cosd(angle)];
+S = [1 0 ; 0 1/aspectRatio];
+
+% Compute A and Q
+A = S'*V';
+Q = A'*A;
+
+% Points on the ellipse satisfy c'*Q*c = resp^2;
+% One way to find the ellipse is to go around the circle and adjust to desired length
+resp2 = criterionResp^2;
+circleVecs = zeros(2,length(angleSupport));
+ellipseVecs = zeros(2,length(angleSupport));
+for tt = 1:length(angleSupport)
+    % Create a point on a circle
+    circleVecs(1,tt) = cosd(angleSupport(tt));
+    circleVecs(2,tt) = sind(angleSupport(tt));
+    
+    % Transform by scaling to produce a point on the ellipse
+    rawResp2 = circleVecs(:,tt)'*Q*circleVecs(:,tt);
+    ellipseVecs(:,tt) = sqrt(resp2)*circleVecs(:,tt)/sqrt(rawResp2);
+    
+    % Get vector length of point on ellipse (aka contrast).  This is
+    % the contrast at each stimulus direction angle that produces
+    % the constant criterion response.
+    isoContrast(tt) = norm(ellipseVecs(:,tt));
+end
+ 
+end
 
 
 

@@ -107,8 +107,6 @@ classdef tfeLCMDirection < tfeQCM
                 error('nChannels must be even');
             end
             
-
-            
             % Create the channels
             %
             % These have tuning described as half wave rectified sinusoids

@@ -1,8 +1,12 @@
 function modelResponseStruct = computeResponse(obj,params,stimulusStruct,kernelStruct,varargin)
-% modelResponseStruct = computeResponse(obj,params,stimulusStruct,kernelStruct,varargin)
+% Compute LCM model responses
 %
-% Compute method for the LCM (linear channel model), with stimuli in
-% direction/contrast form.
+% Syntax:
+%    modelResponseStruct = computeResponse(obj,params,stimulusStruct,kernelStruct,varargin)
+%
+% Description:
+%   Compute method for the LCM (linear channel model), with stimuli in
+%   direction/contrast form.
 %
 % Optional key/value pairs
 %   'addNoise'         - true/false (default false).  Add noise to computed
