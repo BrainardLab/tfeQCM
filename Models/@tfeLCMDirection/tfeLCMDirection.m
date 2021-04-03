@@ -29,8 +29,9 @@ classdef tfeLCMDirection < tfeQCM
 %    'dimension' - The dimension of the stimuli. Can be 2 or 3. Default
 %                  3, but this only works if it is set to 2. (Not entirely
 %                  clear how to build the channesl in a 3D angular space.)
-%    'nChannels' - Number of cos^2 angular tuning linear channels.  Scalar.
+%    'nChannels' - Number of cos^n angular tuning linear channels.  Scalar.
 %                  Default 6.
+%    'exponent'  - Exponent n in cos^n above. Scalar. Default 2.
 %    'startCenter' - Angle of center of first channel in degrees. Scalar.
 %                  Default 0.
 %    'criterionResp' - Criterion response for isoresponse controu. Scalar.
@@ -58,6 +59,7 @@ classdef tfeLCMDirection < tfeQCM
         
         % Mechanisms
         underlyingChannels;
+        exponent;
         
         % Cache stimuli in desired form for fitting here
         angles = [];
@@ -87,6 +89,7 @@ classdef tfeLCMDirection < tfeQCM
             % specific.
             p = inputParser; p.KeepUnmatched = true;
             p.addParameter('nChannels',6,@(x) (isnumeric(x) & isscalar(x)));
+            p.addParameter('exponent',2,@(x) (isnumeric(x) & isscalar(x)));
             p.addParameter('startCenter',0,@(x) (isnumeric(x) & isscalar(x)));
             p.addParameter('criterionResp',1,@(x) (isnumeric(x) & isscalar(x)));
             p.parse(varargin{:});
@@ -96,6 +99,7 @@ classdef tfeLCMDirection < tfeQCM
             
             % Set basic parameters
             obj.nChannels = p.Results.nChannels;
+            obj.exponent = p.Results.exponent;
             obj.startCenter = p.Results.startCenter;
             obj.criterionResp = p.Results.criterionResp;
             
@@ -120,7 +124,7 @@ classdef tfeLCMDirection < tfeQCM
             for ii = 1:obj.nChannels
                 obj.underlyingChannels(ii,:) = cosd(obj.angleSupport-centerLocations(ii));
                 obj.underlyingChannels(ii,sign(obj.underlyingChannels(ii,:)) == -1) = 0;
-                obj.underlyingChannels(ii,:) = obj.underlyingChannels(ii,:).^2;
+                obj.underlyingChannels(ii,:) = obj.underlyingChannels(ii,:).^(obj.exponent);
             end
         end
     end

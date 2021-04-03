@@ -20,6 +20,14 @@ rng(0);
 % Naka-Rushton Params
 NOOFFSET = false;
 LOCKEDOFFSET = true;
+
+% Channels.  6 channels and exponent of 2 gets you the
+% Brouwer adn Heeger version.  8 channels and exponent of
+% 6 gets you the Kim et al. version
+nChannels = 6;
+exponent = 2;
+
+% Other parameters
 theDimension = 2;
 Rmax   = 0.9;
 sigma  = 0.1;
@@ -31,7 +39,14 @@ else
 end
 
 % Weight parameters
-channelWeightsPos = [1 0.6 0.2];
+switch (nChannels)
+    case 6
+        channelWeightsPos = [1 0.6 0.2];
+    case 8
+        channelWeightsPos = [1 0.6 0.2 0.4];
+    otherwise
+        error('Unexpected number of channels set');
+end
 
 % Ellipse parameters.  Parameters here picked by hand so that
 % the scaled LCM isoresponse contour for the weights above
@@ -46,9 +61,11 @@ criterionResponse = 1;
 %
 % Keep noise very small for testing
 if (LOCKEDOFFSET)
-    LCMObj = tfeLCMDirection('verbosity','none','dimension',theDimension,'lockedCrfOffset',offset,'criterionResp',criterionResponse);
+    LCMObj = tfeLCMDirection('verbosity','none','dimension',theDimension,'lockedCrfOffset',offset,'criterionResp',criterionResponse, ...
+        'nChannels',nChannels,'exponent',exponent);
 else
-    LCMObj = tfeLCMDirection('verbosity','none','dimension',theDimension,'criterionResp',criterionResponse);
+    LCMObj = tfeLCMDirection('verbosity','none','dimension',theDimension,'criterionResp',criterionResponse, ...
+        'nChannels',nChannels,'exponent',exponent);
 end
 paramsLCM = LCMObj.defaultParams;
 paramsLCM.channelWeightsPos = channelWeightsPos;
@@ -100,7 +117,7 @@ directionStimulusStruct.values(1:theDimension,:) = stimDirections;
 directionStimulusStruct.values(theDimension+1,:) = stimContrasts;
 
 %% Generate response
-LCMResponseStruct = LCMObj.computeResponse(paramsLCM,directionStimulusStruct,[],'AddNoise',false);
+LCMResponseStruct = LCMObj.computeResponse(paramsLCM,directionStimulusStruct,[],'addNoise',false);
 
 %%  Use the tfeLCMDirection object to fit the stim/resp:
 LCMNoisyResponseStruct = LCMObj.computeResponse(paramsLCM,directionStimulusStruct,[],'addNoise',true);
