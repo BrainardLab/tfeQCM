@@ -42,13 +42,36 @@ theChannelWeights = [[params.channelWeightsPos]' ; [params.channelWeightsPos]'];
 theChannel = (obj.underlyingChannels'*theChannelWeights)';
 
 % Response around circle to unit contrast is just the channel sensitivity
-unitContrastResponse = theChannel;
+unitContrastResponse1 = theChannel;
+
+% Compute linear response no NR) using compute method
+if (obj.dimension ~= 2)
+    error('This only works if stimlus dimension is 2');
+end
+directionStimulusStruct.timebase = 1:length(obj.angleSupport);
+directionStimulusStruct.values(1,:) = cosd(obj.angleSupport);
+directionStimulusStruct.values(2,:) = sind(obj.angleSupport);
+directionStimulusStruct.values(3,:) = ones(size(obj.angleSupport)); 
+paramsUse = rmfield(params,'crfAmp');
+unitContrastResponseStruct = obj.computeResponse(paramsUse,directionStimulusStruct,[]);
+unitContrastResponse2 = unitContrastResponseStruct.values;
+
+% Check
+if (obj.summationExponent == 1)
+    if (max(abs(unitContrastResponse1-unitContrastResponse2)) > 1e-10)
+        error('Do not get same answer twice');
+    end
+    unitContrastResponse = unitContrastResponse1;
+else
+    unitContrastResponse = unitContrastResponse2;
+end
 
 % Deal with small value problem
 unitContrastResponse(unitContrastResponse <= 1e-6) = 1e-6;
 
 % Get isocontrast around unit circle to produce criterion response.
 isoContrast = obj.criterionResp./unitContrastResponse;
+
 
 % Set angle support for return
 angleSupport = obj.angleSupport;

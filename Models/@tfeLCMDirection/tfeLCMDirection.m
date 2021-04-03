@@ -131,7 +131,9 @@ classdef tfeLCMDirection < tfeQCM
             centerLocations = obj.startCenter:centerSpacing:360-centerSpacing+obj.startCenter;
             for ii = 1:obj.nChannels
                 obj.underlyingChannels(ii,:) = cosd(obj.angleSupport-centerLocations(ii));
-                obj.underlyingChannels(ii,sign(obj.underlyingChannels(ii,:)) == -1) = 0;
+                if (obj.summationExponent ~= 2)
+                    obj.underlyingChannels(ii,sign(obj.underlyingChannels(ii,:)) == -1) = 0;
+                end
                 obj.underlyingChannels(ii,:) = obj.underlyingChannels(ii,:).^(obj.channelExponent);
             end
         end

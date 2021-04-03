@@ -27,9 +27,22 @@ LOCKEDOFFSET = true;
 nChannels = 6;
 channelExponent = 2;
 
-% You can muck with this to produce other models, but not
-% germane to the LCM
+% Can muck with starting channel center angle
+startCenter = 0;
+
+% You can muck set this to 2 and channel exponent above
+% to 1 get a quadratic model
 summationExponent = 1;
+
+% Let's make sure user thinks before doing anything too weird
+if (summationExponent ~= 1)
+    if (summationExponent ~= 2)
+        error('Using summation exponent other than 1 or 2 is dangerous');
+    end
+    if (channelExponent ~= 1)
+        error('Not sure you want to use channelExponent ~= 1 with summationExponent == 2');
+    end
+end
 
 % Other parameters
 theDimension = 2;
@@ -42,13 +55,14 @@ else
     offset = -0.1;
 end
 
-% Fit error scalar
+% Fit error scalar.  Big value seems
+% to work better here.
 fitErrorScalar = 10000;
 
 % Weight parameters
 switch (nChannels)
     case 4
-       channelWeightsPos = [1 0.5];
+       channelWeightsPos = [1 1/0.4];
     case 6
         channelWeightsPos = [1 0.6 0.2];
     case 8
@@ -71,10 +85,10 @@ criterionResponse = 1;
 % Keep noise very small for testing
 if (LOCKEDOFFSET)
     LCMObj = tfeLCMDirection('verbosity','none','dimension',theDimension,'lockedCrfOffset',offset,'criterionResp',criterionResponse, ...
-        'nChannels',nChannels,'channelExponent',channelExponent,'summationExponent',summationExponent);
+        'nChannels',nChannels,'channelExponent',channelExponent,'summationExponent',summationExponent,'startCenter',startCenter);
 else
     LCMObj = tfeLCMDirection('verbosity','none','dimension',theDimension,'criterionResp',criterionResponse, ...
-        'nChannels',nChannels,'channelExponent',channelExponent,'summationExponent',summationExponent);
+        'nChannels',nChannels,'channelExponent',channelExponent,'summationExponent',summationExponent,'startCenter',startCenter);
 end
 paramsLCM = LCMObj.defaultParams;
 paramsLCM.channelWeightsPos = channelWeightsPos;

@@ -114,8 +114,6 @@ else
     theResponse = theResponse2;
 end
 
-
-
 %% Push the LCM linear response through a Naka-Rushton non-linearity
 %
 % Only do this if NR parameters are there.  Otherwise return equivalent
