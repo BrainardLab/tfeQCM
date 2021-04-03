@@ -34,7 +34,7 @@ end
 LCMIsoContrast = obj.getIsoContrast(params);
 
 % Find scalar
-scaleFactor = LCMIsoContrast'\isoContrast';
+scaleFactor = (LCMIsoContrast'\isoContrast').^(obj.summationExponent);
 
 % Get scaled parameters
 paramsOut = obj.scaleIsoContrast(params,scaleFactor);

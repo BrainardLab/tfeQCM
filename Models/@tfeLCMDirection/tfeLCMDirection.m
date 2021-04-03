@@ -20,7 +20,10 @@ classdef tfeLCMDirection < tfeQCM
 %     those specified below.
 %
 %     Using a summation exponent other than 1 turns the linear sum into a
-%     non-linear sum.
+%     non-linear sum.  We have a check that if summation exponent isn't
+%     one, it needs to be two.  And if it is two, then the channel exponent
+%     should be one. If you want to explore other choices, you can by
+%     commenting out the check.
 %
 % Inputs:
 %    None.
@@ -111,6 +114,16 @@ classdef tfeLCMDirection < tfeQCM
             obj.startCenter = p.Results.startCenter;
             obj.criterionResp = p.Results.criterionResp;
             
+            % Don't allow parameter choices to get too crazy
+            if (obj.summationExponent ~= 1)
+                if (obj.summationExponent ~= 2)
+                    error('Using summation exponent other than 1 or 2 is dangerous');
+                end
+                if (obj.channelExponent ~= 1)
+                    error('Not sure you want to use channelExponent ~= 1 with summationExponent == 2');
+                end
+            end
+            
             % Checks
             if (obj.dimension ~= 2)
                 error('The LCM model only works in two dimensions');  
@@ -131,9 +144,6 @@ classdef tfeLCMDirection < tfeQCM
             centerLocations = obj.startCenter:centerSpacing:360-centerSpacing+obj.startCenter;
             for ii = 1:obj.nChannels
                 obj.underlyingChannels(ii,:) = cosd(obj.angleSupport-centerLocations(ii));
-                if (obj.summationExponent ~= 2)
-                    obj.underlyingChannels(ii,sign(obj.underlyingChannels(ii,:)) == -1) = 0;
-                end
                 obj.underlyingChannels(ii,:) = obj.underlyingChannels(ii,:).^(obj.channelExponent);
             end
         end

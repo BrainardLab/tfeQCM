@@ -27,12 +27,16 @@ LOCKEDOFFSET = true;
 nChannels = 6;
 channelExponent = 2;
 
-% Can muck with starting channel center angle
-startCenter = 0;
-
 % You can muck set this to 2 and channel exponent above
 % to 1 get a quadratic model
 summationExponent = 1;
+
+% Can muck with starting channel center angle
+%
+% If you set nChannels = 4, channelExponent = 1, summationExponent = 2,
+% and startCenter = 105, you'll get an ellipse that matches the one we set
+% up by hand.
+startCenter = 0;
 
 % Let's make sure user thinks before doing anything too weird
 if (summationExponent ~= 1)
@@ -62,7 +66,7 @@ fitErrorScalar = 10000;
 % Weight parameters
 switch (nChannels)
     case 4
-       channelWeightsPos = [1 1/0.4];
+       channelWeightsPos = [1 1/(0.4.^2)];
     case 6
         channelWeightsPos = [1 0.6 0.2];
     case 8

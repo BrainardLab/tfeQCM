@@ -70,8 +70,15 @@ end
 unitContrastResponse(unitContrastResponse <= 1e-6) = 1e-6;
 
 % Get isocontrast around unit circle to produce criterion response.
-isoContrast = obj.criterionResp./unitContrastResponse;
+isoContrast = obj.criterionResp./(unitContrastResponse.^(1/obj.summationExponent));
 
+% Check that isoContrast really does produce an isoresponse.
+directionStimulusStruct.values(3,:) = isoContrast;
+checkContrastResponseStruct = obj.computeResponse(paramsUse,directionStimulusStruct,[]);
+checkContrastResponse = checkContrastResponseStruct.values;
+if (max(abs(checkContrastResponse - checkContrastResponse(1))) > 1e-10)
+    error('iso contrast contour does not actually produce iso response');
+end
 
 % Set angle support for return
 angleSupport = obj.angleSupport;
