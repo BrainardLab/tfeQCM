@@ -22,7 +22,7 @@ params = p.Results.params;
 switch (p.Results.PrintType)
     case 'standard'
         fprintf('Channel weights (positive arm):\n');
-        for ii = 1:obj.nChannels/2-1
+        for ii = 1:obj.nChannels/2
             fprintf('\tWeight %d: %0.2g\n',ii,params.channelWeightsPos(ii));
         end
 

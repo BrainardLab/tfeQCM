@@ -19,6 +19,9 @@ classdef tfeLCMDirection < tfeQCM
 %     Inherits optional key/value pairs from parent class tfeQCM, plus
 %     those specified below.
 %
+%     Using a summation exponent other than 1 turns the linear sum into a
+%     non-linear sum.
+%
 % Inputs:
 %    None.
 %
@@ -31,7 +34,9 @@ classdef tfeLCMDirection < tfeQCM
 %                  clear how to build the channesl in a 3D angular space.)
 %    'nChannels' - Number of cos^n angular tuning linear channels.  Scalar.
 %                  Default 6.
-%    'exponent'  - Exponent n in cos^n above. Scalar. Default 2.
+%    'channelExponent'  - Exponent n in cos^n above. Scalar. Default 2.
+%    'summationExponent' - Channel responses raised to this number prior to
+%                  summation. Scalar. Default 1.
 %    'startCenter' - Angle of center of first channel in degrees. Scalar.
 %                  Default 0.
 %    'criterionResp' - Criterion response for isoresponse controu. Scalar.
@@ -59,7 +64,8 @@ classdef tfeLCMDirection < tfeQCM
         
         % Mechanisms
         underlyingChannels;
-        exponent;
+        channelExponent;
+        summationExponent;
         
         % Cache stimuli in desired form for fitting here
         angles = [];
@@ -89,7 +95,8 @@ classdef tfeLCMDirection < tfeQCM
             % specific.
             p = inputParser; p.KeepUnmatched = true;
             p.addParameter('nChannels',6,@(x) (isnumeric(x) & isscalar(x)));
-            p.addParameter('exponent',2,@(x) (isnumeric(x) & isscalar(x)));
+            p.addParameter('channelExponent',2,@(x) (isnumeric(x) & isscalar(x)));
+            p.addParameter('summationExponent',1,@(x) (isnumeric(x) & isscalar(x)));
             p.addParameter('startCenter',0,@(x) (isnumeric(x) & isscalar(x)));
             p.addParameter('criterionResp',1,@(x) (isnumeric(x) & isscalar(x)));
             p.parse(varargin{:});
@@ -99,7 +106,8 @@ classdef tfeLCMDirection < tfeQCM
             
             % Set basic parameters
             obj.nChannels = p.Results.nChannels;
-            obj.exponent = p.Results.exponent;
+            obj.channelExponent = p.Results.channelExponent;
+            obj.summationExponent = p.Results.summationExponent;
             obj.startCenter = p.Results.startCenter;
             obj.criterionResp = p.Results.criterionResp;
             
@@ -124,7 +132,7 @@ classdef tfeLCMDirection < tfeQCM
             for ii = 1:obj.nChannels
                 obj.underlyingChannels(ii,:) = cosd(obj.angleSupport-centerLocations(ii));
                 obj.underlyingChannels(ii,sign(obj.underlyingChannels(ii,:)) == -1) = 0;
-                obj.underlyingChannels(ii,:) = obj.underlyingChannels(ii,:).^(obj.exponent);
+                obj.underlyingChannels(ii,:) = obj.underlyingChannels(ii,:).^(obj.channelExponent);
             end
         end
     end

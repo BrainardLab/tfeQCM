@@ -8,6 +8,9 @@ function modelResponseStruct = computeResponse(obj,params,stimulusStruct,kernelS
 %   Compute method for the LCM (linear channel model), with stimuli in
 %   direction/contrast form.
 %
+%   Note that we've implemented a more general form with a summation
+%   exponent, which usually we set to 1 to match the LCM idea.
+%
 % Optional key/value pairs
 %   'addNoise'         - true/false (default false).  Add noise to computed
 %                        response?  Useful for simulations.
@@ -75,26 +78,52 @@ end
 % this symmetric.  We specify the first three weights and then duplicat
 % for the second three.
 theChannelWeights = [[params.channelWeightsPos]' ; [params.channelWeightsPos]'];
-theChannel = (obj.underlyingChannels'*theChannelWeights)';
+theChannel = ((obj.underlyingChannels)'*theChannelWeights)';
 
 %% Get linear response from LCM params
 %
 % We count on fact that the angle support is integers between 1 and 360,a
 % and that we've rounded angles to nearest degree.
-unitSensitivities = theChannel(angles);
-linearResponse = contrasts.*unitSensitivities;
+theResponse1 = contrasts.*theChannel(angles);
 
-% Deal with small value problem
-linearResponse(linearResponse <= 1e-6) = 1e-6;
+%% This is another way of doing the same calculation when summation exponent is 1
+%
+% But it's what we want when that exponent is not 1.
+theResponse2 = zeros(size(angles));
+for cc = 1:size(obj.underlyingChannels,1)
+    theResponse2 = theResponse2 + ((contrasts.*obj.underlyingChannels(cc,angles)).^(obj.summationExponent))*theChannelWeights(cc);
+end
+
+% Deal with small value and negative value problem
+theResponse1(theResponse1 <= 1e-6) = 1e-6;
+theResponse2(theResponse2 <= 1e-6) = 1e-6;
+
+%% Check that both ways give same answer when summation exponent is 1
+%
+% For reasons I don't understand, choosing one or the other can matter
+% even when they are the same to 1e-10. This has to do with fmincon
+% and its evaluation of stopping point.  Using a different error function
+% scale factor makes the two versions work the same. Keeping old way
+% when summationExponent is 1, for backwards compatibility.
+if (obj.summationExponent == 1)
+    if (max(abs(theResponse1-theResponse2)./theResponse1) > 1e-8)
+        error('Don''t compute same response two ways');
+    end
+    theResponse = theResponse1;
+else
+    theResponse = theResponse2;
+end
+
+
 
 %% Push the LCM linear response through a Naka-Rushton non-linearity
 %
 % Only do this if NR parameters are there.  Otherwise return equivalent
 % contrasts.
 if (isfield(params,'crfAmp'))
-    neuralResponse = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],linearResponse) + params.crfOffset;
+    neuralResponse = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],theResponse) + params.crfOffset;
 else
-    neuralResponse = linearResponse;
+    neuralResponse = theResponse;
 end
 
 %% Make the neural response structure
