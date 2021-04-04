@@ -24,6 +24,8 @@ if (isempty(p.Results.defaultParams))
   
     % Initial weights
     params.channelWeightsPos = ones(obj.nChannels/2,1)';
+    params.channelWeightsPos(2:obj.nChannels/2) = 1e-3;
+    params.channelWeightsPos = params.channelWeightsPos/norm(params.channelWeightsPos);
     
     % The Naka-Rushton
     params.crfAmp = 1;
@@ -45,7 +47,8 @@ end
 %
 % By default we set lower and upper bounds of channel weights to one, to
 % lock scale of isoresponse countour.
-paramsLb.channelWeightsPos = [1 -1e6*ones(obj.nChannels/2-1,1)'];
+paramsLb.channelWeightsPos = [-1e6*ones(obj.nChannels/2,1)'];
+%paramsLb.channelWeightsPos = [1e-3*ones(obj.nChannels/2,1)'];
 paramsLb.crfAmp = 1e-1;
 paramsLb.crfSemi = 1e-2;
 paramsLb.crfExponent = 1e-2;
@@ -54,7 +57,7 @@ paramsLb.noiseLevel = 0;
 paramsLb.crfOffset = -2;
 
 %% Upper bounds
-paramsUb.channelWeightsPos = [1 1e6*ones(obj.nChannels/2,1)'];
+paramsUb.channelWeightsPos = [1e6*ones(obj.nChannels/2,1)'];
 paramsUb.crfAmp = 3;
 paramsUb.crfSemi = 1e2;
 paramsUb.crfExponent = 10;

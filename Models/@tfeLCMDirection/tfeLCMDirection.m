@@ -59,9 +59,6 @@ classdef tfeLCMDirection < tfeQCM
         % Channel center start
         startCenter = [];
         
-        % Criterion response to go from response to isocontour      
-        criterionResp = [];
-        
         % Angle support
         angleSupport = 1:1:360;
         
@@ -73,6 +70,14 @@ classdef tfeLCMDirection < tfeQCM
         % Cache stimuli in desired form for fitting here
         angles = [];
         contrasts = [];
+        
+    end
+    
+    % Public, read-writ properties.
+    properties (SetAccess = public, GetAccess = public)
+        
+        % Criterion response to go from response to isocontour      
+        criterionResp = [];
         
     end
     

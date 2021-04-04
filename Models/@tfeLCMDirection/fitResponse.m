@@ -41,11 +41,15 @@ function [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,vararg
 %                           option to the fitError method, but overrides
 %                           the fitError's default value, Default here is
 %                           1000.
+%   'noNakaRushton'       - true/false (default false). If true, don't apply
+%                           Naka-Rushton, just return equivalent contrast.
 %
 %
 
 %% History
 %    03/01/21  dhb  Wrote from QCM version.
+%    04/03/21  dhb  New normalization, and enforce positivity on responses
+%                   around angle.
 
 %% Parse vargin for options passed here
 %
@@ -56,6 +60,7 @@ p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
 p.addRequired('thePacket',@isstruct);
 p.addParameter('initialParams',[],@(x)(isempty(x) | isstruct(x)));
 p.addParameter('fitErrorScalar',1000,@isnumeric);
+p.addParameter('noNakaRushton',false,@islogical);
 p.addParameter('fminconAlgorithm','interior-point',@(x) (isempty(x) | ischar(x)));
 p.parse(thePacket,varargin{:});
 
@@ -64,6 +69,11 @@ p.parse(thePacket,varargin{:});
 if (~isempty(p.Results.initialParams))
     initialParams = p.Results.initialParams;
 end
+
+% Normalize the initial parameters to sum to 1
+initialVec = obj.paramsToVec(initialParams);
+initialVec(1:obj.nChannels/2) = initialVec(obj.nChannels/2)/sum(initialVec(obj.nChannels/2));
+initialParams = obj.vecToParams(initialVec);
 
 %% Locked Naka-Rushton parameters
 if (~isempty(obj.lockedCrfAmp))
@@ -94,9 +104,11 @@ end
 % flag back to false.  The computeResponse routine will compute it when
 % the fitting flag is true and it is empty.
 obj.fitting = true; obj.angles = [];
-[paramsFit1,fVal1,modelResponseStruct1] = fitResponse@tfe(obj,thePacket,varargin{:},...
+[paramsFit1,fVal1,modelResponseStruct1] = fitResponse@tfe(obj,thePacket,...
     'initialParams',initialParams,'vlbParams',vlbParams,'vubParams',vubParams,...
-    'fitErrorScalar',p.Results.fitErrorScalar);
+    'fitErrorScalar',p.Results.fitErrorScalar,...
+    'noNakaRushton',p.Results.noNakaRushton, ...
+    'nlcon',@(x)fitNlCon(x,obj));
 obj.fitting = false;
 obj.angles = [];
 
@@ -105,22 +117,42 @@ paramsFit = paramsFit1;
 fVal = fVal1;
 modelResponseStruct = modelResponseStruct1;
 
-% Sanity check
-for ii = 2:length(paramsFit.channelWeightsPos)/2
-    checkVal = paramsFit.channelWeightsPos(ii)/paramsFit.channelWeightsPos(1);
-    if (checkVal < 1e-4 | checkVal > 1e4)
-        error('Large asymmetry in fit channel weights. May be a symptom that locking first weight is not appropriate for this data set');
-    end
-end
+% Sanity check. This is not needed with new normalization procedure.
+% for ii = 2:length(paramsFit.channelWeightsPos)/2
+%     checkVal = paramsFit.channelWeightsPos(ii)/paramsFit.channelWeightsPos(1);
+%     if (checkVal < 1e-4 | checkVal > 1e4)
+%         error('Large asymmetry in fit channel weights. May be a symptom that locking first weight is not appropriate for this data set');
+%     end
+% end
 
 % Use this to check error value as it sits here
-fValCheck = obj.fitError(obj.paramsToVec(paramsFit),thePacket,varargin{:},'fitErrorScalar',p.Results.fitErrorScalar);
+fValCheck = obj.fitError(obj.paramsToVec(paramsFit),thePacket,varargin{:},'fitErrorScalar',p.Results.fitErrorScalar,'noNakaRushton',p.Results.noNakaRushton);
 if (fValCheck ~= fVal)
     error('Cannot compute the same fit error twice the same way. Check.');
 end
 
 
 end
+
+function [C,Ceq] = fitNlCon(x,obj)
+
+% Constraint on vector length
+Ceq = norm(x(1:obj.nChannels/2))-1;
+
+% Keep responses around the circle positive
+if (obj.dimension ~= 2)
+    error('This only works if stimlus dimension is 2');
+end
+stimulusStruct.timebase = 1:length(obj.angleSupport);
+stimulusStruct.values(1,:) = cosd(obj.angleSupport);
+stimulusStruct.values(2,:) = sind(obj.angleSupport);
+stimulusStruct.values(3,:) = ones(size(obj.angleSupport)); 
+unitContrastResponseStruct = obj.computeResponse(obj.vecToParams(x),stimulusStruct,[],'noNakaRushton',true);
+C = -min(unitContrastResponseStruct.values);
+
+end
+
+
 
 
 

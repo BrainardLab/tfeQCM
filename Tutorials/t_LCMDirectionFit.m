@@ -15,42 +15,67 @@
 clear; close all
 rng(0);
 
+%% Test case specific parameter choices
+whichTest = 'qcmTwoChannel';
+switch (whichTest)
+    case 'brouwerHeegerBasic'
+        % This implements our version of the Brouwer and Heeger model.
+        % Six channels with cos^2 sensitivity, linear combination.
+        %
+        % Channel properties
+        nChannels = 6;
+        channelExponent = 2;
+        summationExponent = 1;
+        startCenter = 0;
+        channelWeightsPos = [1 0.6 0.2];
+        
+        % Ellipse to fit
+        ellipseAngle = 105;         % Angle
+        ellipseAspectRatio = 0.4;   % Minor axis aspect ratio
+
+    case 'kimEtAl'
+        % This implements the Kim et al. variant of
+        % the Brouwer and Heeger model.
+        % Eight channels with cos^4sensitivity, linear combination.
+        %
+        % Channel properties
+        nChannels = 8;
+        channelExponent = 4;
+        summationExponent = 1;
+        startCenter = 0;
+        channelWeightsPos = [1 0.6 0.2 0.4];
+        
+        % Ellipse to fit
+        ellipseAngle = 105;         % Angle
+        ellipseAspectRatio = 0.4;   % Minor axis aspect ratio
+
+    case 'qcmTwoChannel'
+        % This implements a QCM with L+M and L-M underlying mechanisms.
+        %
+        % Channel properties
+        nChannels = 4;
+        channelExponent = 1;
+        summationExponent = 2;
+        startCenter = 45;
+        channelWeightsPos = 0.8*[1 1/(0.4.^2)];
+        
+        % Ellipse to fit
+        ellipseAngle = 45;          % Angle
+        ellipseAspectRatio = 0.4;   % Minor axis aspect ratio
+    case 'qcmFiveChannel'
+    otherwise
+        error('Unknown test case specified');
+end
+
 %% Set up params
 %
 % Naka-Rushton Params
 NOOFFSET = false;
 LOCKEDOFFSET = true;
 
-% Channels.  6 channels and channelExponent of 2 gets you the
-% Brouwer adn Heeger version.  8 channels and channelExponent of
-% 6 gets you the Kim et al. version.
-nChannels = 6;
-channelExponent = 2;
-
-% You can muck set this to 2 and channel exponent above
-% to 1 get a quadratic model
-summationExponent = 1;
-
-% Can muck with starting channel center angle
-%
-% If you set nChannels = 4, channelExponent = 1, summationExponent = 2,
-% and startCenter = 105, you'll get an ellipse that matches the one we set
-% up by hand.
-startCenter = 0;
-
-% Let's make sure user thinks before doing anything too weird
-if (summationExponent ~= 1)
-    if (summationExponent ~= 2)
-        error('Using summation exponent other than 1 or 2 is dangerous');
-    end
-    if (channelExponent ~= 1)
-        error('Not sure you want to use channelExponent ~= 1 with summationExponent == 2');
-    end
-end
-
-% Other parameters
+% Other parameters.  Keep Rmax larger than criterionResp-offset
 theDimension = 2;
-Rmax   = 0.9;
+Rmax   = 2;
 sigma  = 0.1;
 n      = 2.1;
 if (NOOFFSET)
@@ -63,23 +88,8 @@ end
 % to work better here.
 fitErrorScalar = 10000;
 
-% Weight parameters
-switch (nChannels)
-    case 4
-       channelWeightsPos = [1 1/(0.4.^2)];
-    case 6
-        channelWeightsPos = [1 0.6 0.2];
-    case 8
-        channelWeightsPos = [1 0.6 0.2 0.4];
-    otherwise
-        error('Unexpected number of channels set');
-end
-
-% Ellipse parameters.  Parameters here picked by hand so that
-% the scaled LCM isoresponse contour for the weights above
-% comes out pretty close.
-ellipseAngle = 105;         % Angle
-ellipseAspectRatio = 0.4;   % Minor axis aspect ratio
+% Follow normalization convention with channel weights.
+channelWeightsPos = channelWeightsPos/norm(channelWeightsPos);
 
 % Criterion response for level of isoresponse contours
 criterionResponse = 1;
@@ -121,11 +131,13 @@ contrastsInEachDirection = maxContrast*[0.0625, 0.125, 0.25, 0.5, 1];
 nContrastsPerDirection = length(contrastsInEachDirection);
 
 % Specify the directions, which must each have unit length.
-indDirectionDirections = [ [1 0]',  [1 1]',  [0 1]', [1 -1]' ];
+nUniqueDirections = 10;
+indDirectionAngles = linspace(1,360,nUniqueDirections);
+indDirectionDirections(1,:) = cosd(indDirectionAngles);
+indDirectionDirections(2,:) = sind(indDirectionAngles);
 for ii = 1:size(indDirectionDirections,2)
     indDirectionDirections(:,ii) = indDirectionDirections(:,ii)/norm(indDirectionDirections(:,ii));
 end
-nUniqueDirections = size(indDirectionDirections,2);
 
 % Construct the contrasts crossed with directions set of stimuli
 stimuli = kron(indDirectionDirections',contrastsInEachDirection')';
@@ -143,10 +155,12 @@ directionStimulusStruct = stimulusStruct;
 directionStimulusStruct.values(1:theDimension,:) = stimDirections;
 directionStimulusStruct.values(theDimension+1,:) = stimContrasts;
 
-%% Generate response
+%% Generate response and isocontrast contour
 LCMResponseStruct = LCMObj.computeResponse(paramsLCM,directionStimulusStruct,[],'addNoise',false);
+isoContrastLCM = LCMObj.getIsoContrast(paramsLCM);
+angleSupport = LCMObj.angleSupport;
 
-%%  Use the tfeLCMDirection object to fit noisy responses
+%%  Use the tfeLCMDirection object to fit noisy LCM responses
 LCMNoisyResponseStruct = LCMObj.computeResponse(paramsLCM,directionStimulusStruct,[],'addNoise',true);
 
 % Construct a packet for the LCM to fit.
@@ -156,56 +170,118 @@ thePacket.kernel = [];
 thePacket.metaData = [];
 
 % Fit the packet
-[fitLCMParams,fVal,fitResponseStructLCM] = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar);
-fprintf('\nLCM parameters from fit:\n');
-LCMObj.paramPrint(fitLCMParams)
+paramsLCMFit = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar);
+fprintf('\nLCM parameters from fit to LCM:\n');
+LCMObj.paramPrint(paramsLCMFit)
 
-%% Check that the fit recovers the responses we put in to reasonable approximation
+% Check that the fit recovers the responses we put in to reasonable approximation
 %
 % This will break if we simulate too much noise
-fitLCMResponseStruct = LCMObj.computeResponse(fitLCMParams,directionStimulusStruct,[],'addNoise',false);
+fitLCMResponseStruct = LCMObj.computeResponse(paramsLCMFit,directionStimulusStruct,[],'addNoise',false);
 if (max(abs(fitLCMResponseStruct.values-LCMResponseStruct.values)/max(LCMResponseStruct.values(:))) > 5e-2)
-%    error('Fit does not do a good job of recovering responses');
+    error('Fit does not do a good job of recovering responses');
 end
+isoContrastLCMFit = LCMObj.getIsoContrast(paramsLCMFit);
 
-%% Get and plot isoresponse contour
+%% Scale isocontrast contour by a specified amount.
+%
+% The amount is the change in criterion response, so with
+% the Naka-Rushton it will not in general be the factor by
+% which the contour itself grows or shrinks.
+%
+% You probably wouldn't do this, but understanding the idea
+% is the basis of the code that scales an LCM isocontrast
+% contour to fit another one for plotting.
+contourScaleFactor = 0.25;
+saveCriterionResp = LCMObj.criterionResp;
+LCMObj.criterionResp = 0.5*LCMObj.criterionResp;
+[isoContrastScale] = LCMObj.getIsoContrast(paramsLCM);
+LCMObj.criterionResp = saveCriterionResp;
+
+%% Plot isoresponse contours
 figure; hold on
-[isoContrastFit,unitContrastResponseFit,angleSupport] = LCMObj.getIsoContrast(fitLCMParams);
-plot(isoContrastFit.*cosd(angleSupport),isoContrastFit.*sind(angleSupport),'r','LineWidth',2);
+plot(isoContrastLCM.*cosd(angleSupport),isoContrastLCM.*sind(angleSupport),'k','LineWidth',5);
+plot(isoContrastLCMFit.*cosd(angleSupport),isoContrastLCMFit.*sind(angleSupport),'r','LineWidth',3);
+plot(isoContrastScale.*cosd(angleSupport),isoContrastScale.*sind(angleSupport),'b','LineWidth',2);
 axis('square');
 xlim([-2 2]); ylim([-2 2]);
 xlabel('Cone 1 Contrast');
 ylabel('Cone 2 Contrast');
 title('IsoContrast');
-
-%% Scale isocontrast contour and replot
-fitLCMParamsScale = LCMObj.scaleIsoContrast(fitLCMParams,0.5);
-[isoContrastScale] = LCMObj.getIsoContrast(fitLCMParamsScale);
-plot(isoContrastScale.*cosd(angleSupport),isoContrastScale.*sind(angleSupport),'b','LineWidth',2);
+legend({'LCM', 'LCM Fit', sprintf('LCM Scaled by %g in crit resp',contourScaleFactor)},'Location','NortheastOutside');
 
 %% Compute responses with original and scaled parameters
-fitResponseStruct = LCMObj.computeResponse(fitLCMParams,directionStimulusStruct,[]);
-fitResponseStructScale = LCMObj.computeResponse(fitLCMParamsScale,directionStimulusStruct,[]);
-if (max(abs(fitResponseStruct.values-fitResponseStructScale.values)./fitResponseStruct.values) > 1e-9)
-    error('Scaling does not preserve response');
-end
+% fitResponseStruct = LCMObj.computeResponse(paramsLCM,directionStimulusStruct,[]);
+% fitResponseStructScale = LCMObj.computeResponse(paramsLCMScale,directionStimulusStruct,[]);
+% if (max(abs(fitResponseStruct.values-fitResponseStructScale.values)./fitResponseStruct.values) > 1e-9)
+%     error('Scaling does not preserve response');
+% end
 
 %% Generate an ellipsoidal isoresponse contour
 ellipticalIsoContrast = tfeEllipticalIsoContrast(ellipseAngle,ellipseAspectRatio,LCMObj.angleSupport,LCMObj.criterionResp);
 
 %% Get parameters with model parameters scaled to produce best fit to elliptical contour
-fitLCMParamsScaledTOEllipse = LCMObj.scaleToFitIsoContrast(fitLCMParams,ellipticalIsoContrast);
-scaledToEllipseIsoContrast = LCMObj.getIsoContrast(fitLCMParamsScaledTOEllipse);
+%
+% This shows how to scale an isoresponse contour, but doesn't try to adjust
+% relative channel weights to best fit the ellipse.
+newCriterionResp = LCMObj.scaleToFitIsoContrast(paramsLCM,ellipticalIsoContrast);
+saveCriterionResp = LCMObj.criterionResp;
+LCMObj.criterionResp = newCriterionResp;
+scaledToEllipseIsoContrast = LCMObj.getIsoContrast(paramsLCM);
+LCMObj.criterionResp = saveCriterionResp;
 
 % Plot
 figure; hold on
-plot(ellipticalIsoContrast.*cosd(angleSupport),ellipticalIsoContrast.*sind(angleSupport),'k','LineWidth',2);
-plot(isoContrastFit.*cosd(angleSupport),isoContrastFit.*sind(angleSupport),'r','LineWidth',2);
+plot(ellipticalIsoContrast.*cosd(angleSupport),ellipticalIsoContrast.*sind(angleSupport),'k','LineWidth',5);
+plot(isoContrastLCM.*cosd(angleSupport),isoContrastLCM.*sind(angleSupport),'r','LineWidth',3);
 plot(scaledToEllipseIsoContrast.*cosd(angleSupport),scaledToEllipseIsoContrast.*sind(angleSupport),'b','LineWidth',2);
 axis('square');
 xlim([-2 2]); ylim([-2 2]);
 xlabel('Cone 1 Contrast');
 ylabel('Cone 2 Contrast');
 title('IsoContrast');
+legend({'Ellipse', 'LCM' 'LCM Scaled To Fit'},'Location','NortheastOutside');
+
+%% Now fit the model to the ellipsoidal isoresponse contour
+%
+% This actually tries to fit the ellipse isoresopnse contour,
+% by fitting data that correspond to the iso response contrasts.
+%
+% Note use of 'noNakeRushton' flag so that we just work with the
+% linear response, since what we care about here is the shape. 
+%
+% Set up structure describing stimuli around the circle
+fitStimulusStruct.timebase = 1:length(LCMObj.angleSupport);
+fitStimulusStruct.values(1,:) = cosd(LCMObj.angleSupport);
+fitStimulusStruct.values(2,:) = sind(LCMObj.angleSupport);
+fitStimulusStruct.values(3,:) = ellipticalIsoContrast;
+
+% Want to produce criterion response for those stimuli
+fitResponseStruct.timebase = fitStimulusStruct.timebase;
+fitResponseStruct.values = LCMObj.criterionResp*ones(size(fitResponseStruct.timebase));
+
+% Construct the packet for the fit
+thePacket.stimulus = fitStimulusStruct;
+thePacket.response = fitResponseStruct;
+thePacket.kernel = [];
+thePacket.metaData = [];
+
+% Do the fit.
+[fitToEllipseParams,fVal,fitToEllpiseStructLCM] = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar,'noNakaRushton',false);
+[isoContrastFromEllipseFit] = LCMObj.getIsoContrast(fitToEllipseParams);
+paramsLCMFit = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar);
+fprintf('\nLCM parameters from fit to ellipse:\n');
+LCMObj.paramPrint(paramsLCMFit)
+
+% Plot
+figure; hold on
+plot(ellipticalIsoContrast.*cosd(angleSupport),ellipticalIsoContrast.*sind(angleSupport),'k','LineWidth',5);
+plot(isoContrastFromEllipseFit.*cosd(angleSupport),isoContrastFromEllipseFit.*sind(angleSupport),'r','LineWidth',3);
+axis('square');
+xlim([-2 2]); ylim([-2 2]);
+xlabel('Cone 1 Contrast');
+ylabel('Cone 2 Contrast');
+title('IsoContrast');
+legend({'Ellipse', 'LCM Fit to Ellipse'},'Location','NortheastOutside');
 
 

@@ -14,6 +14,8 @@ function modelResponseStruct = computeResponse(obj,params,stimulusStruct,kernelS
 % Optional key/value pairs
 %   'addNoise'         - true/false (default false).  Add noise to computed
 %                        response?  Useful for simulations.
+%   'noNakaRushton'    - true/false (default false). If true, don't apply
+%                        Naka-Rushton, just return equivalent contrast.
 
 %% History
 %    03/01/21  dhb  Wrote from QCM version.
@@ -28,6 +30,7 @@ p.addRequired('params',@isstruct);
 p.addRequired('stimulusStruct',@isstruct);
 p.addRequired('kernelStruct',@(x)(isempty(x) || isstruct(x)));
 p.addParameter('addNoise',false,@islogical);
+p.addParameter('noNakaRushton',false,@islogical);
 p.parse(params,stimulusStruct,kernelStruct,varargin{:});
 params = p.Results.params;
 
@@ -118,7 +121,7 @@ end
 %
 % Only do this if NR parameters are there.  Otherwise return equivalent
 % contrasts.
-if (isfield(params,'crfAmp'))
+if (isfield(params,'crfAmp') & ~p.Results.noNakaRushton)
     neuralResponse = ComputeNakaRushton([params.crfAmp,params.crfSemi,params.crfExponent],theResponse) + params.crfOffset;
 else
     neuralResponse = theResponse;

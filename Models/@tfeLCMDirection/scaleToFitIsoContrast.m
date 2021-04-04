@@ -1,18 +1,28 @@
-function paramsOut = scaleToFitIsoContrast(obj,params,isoContrast,varargin)
-% Scale parameters so that LCM isocontrast contour best fits a given one.
+function newCriterionResp = scaleToFitIsoContrast(obj,params,isoContrast,varargin)
+% Find criterion response such that LCM isocontrast contour best fits a given one.
 %
 % Syntax:
-%    paramsOut = scaleIsoContrast(obj,params,varargin)
+%    newCriterionResp = scaleIsoContrast(obj,params,varargin)
 %
 % Description:
-%    Scale the parameters so as to change the size of the isoresponse
-%    contour by the passed scalar,without changing the model's predictions.
+%    Find the criterion response so as to change the size of the isoresponse
+%    contour to fit a passed isoresponse contour.
+%
+%    Once you have the return value from this method, set the criterion
+%    response to that value. This function does not change the object.
+%    So usage would be:
+%       newCriterionResp = theObj.scaleToFitIsoContrast(params,isoContrast)
+%       saveCriterionResp = theObj.criterionResp;
+%       theObj.criterionResp = newCriterionResp;
+%       isoContrastFit = theObj.getIsoContrast(params);
+%       theObj.criterionResp = saveCriterionResp;
 %
 % Optional key/value pairs
 %   None.
 
 % History
-%   03/12/21  dhb  Wrote it.
+%   03/12/21  dhb  Wrote it.%
+%   04/03/21  dhb  Rewrote based on fmincon 
 
 % Parse input.
 p = inputParser;
@@ -20,23 +30,36 @@ p.addRequired('params',@isstruct);
 p.addRequired('isoContrast',@isnumeric);
 p.parse(params,isoContrast,varargin{:});
 
-% Dimension check
-if (obj.dimension ~= 2)
-    error('LCM only implemented in 2 dimensions');
+% Save criterion response
+saveCriterionResp = obj.criterionResp;
+
+% fmincon options
+options = optimset('fmincon');
+options = optimset(options,'Diagnostics','off','Display','iter','LargeScale','off');
+vlbVec = params.crfOffset;
+vubVec = params.crfAmp+params.crfOffset;
+
+% Do the fit
+newCriterionResp = fmincon(@(x)FitFunction(x,obj,params,isoContrast), ...
+    saveCriterionResp,[],[],[],[],vlbVec,vubVec,[],options);
+
+% Put criterionResp back
+obj.criterionResp = saveCriterionResp;
+
 end
 
-% Check
-if (length(isoContrast) ~= length(obj.angleSupport))
-    error('Wrong length for passed isocontrast');
-end
+function f = FitFunction(x,obj,params,isoContrast)
 
-% Get the LCM model isocontrast contour
-LCMIsoContrast = obj.getIsoContrast(params);
+% Set criterion
+obj.criterionResp = x;
 
-% Find scalar
-scaleFactor = (LCMIsoContrast'\isoContrast').^(obj.summationExponent);
+% Get isocontrast
+isoContrastFit = obj.getIsoContrast(params);
 
-% Get scaled parameters
-paramsOut = obj.scaleIsoContrast(params,scaleFactor);
+% Compare with target
+isoDifference = isoContrast-isoContrastFit;
+
+% Return RMSE
+f = sqrt(mean(isoDifference.^2));
 
 end
