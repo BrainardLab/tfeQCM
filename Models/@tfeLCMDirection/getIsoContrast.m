@@ -83,7 +83,7 @@ isoContrast = exponentiatedContrast.^(1/obj.summationExponent);
 directionStimulusStruct.values(3,:) = isoContrast;
 checkContrastResponseStruct = obj.computeResponse(params,directionStimulusStruct,[],'noNakaRushton',false);
 checkContrastResponse = checkContrastResponseStruct.values;
-if (max(abs(checkContrastResponse - obj.criterionResp)) > 1e-10)
+if (max(abs(checkContrastResponse - obj.criterionResp)) > 1e-8)
     error('iso contrast contour does not actually produce iso response');
 end
 

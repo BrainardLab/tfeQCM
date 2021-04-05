@@ -60,6 +60,8 @@ p = inputParser; p.KeepUnmatched = true; p.PartialMatching = false;
 p.addRequired('thePacket',@isstruct);
 p.addParameter('initialParams',[],@(x)(isempty(x) | isstruct(x)));
 p.addParameter('fitErrorScalar',1000,@isnumeric);
+p.addParameter('maxIter',[],@isnumeric);
+p.addParameter('maxFunEval',[],@isnumeric);
 p.addParameter('noNakaRushton',false,@islogical);
 p.addParameter('fminconAlgorithm','interior-point',@(x) (isempty(x) | ischar(x)));
 p.parse(thePacket,varargin{:});
@@ -108,6 +110,8 @@ obj.fitting = true; obj.angles = [];
     'initialParams',initialParams,'vlbParams',vlbParams,'vubParams',vubParams,...
     'fitErrorScalar',p.Results.fitErrorScalar,...
     'noNakaRushton',p.Results.noNakaRushton, ...
+    'MaxIter',p.Results.maxIter, ...
+    'MaxFunEval',p.Results.maxFunEval, ...
     'nlcon',@(x)fitNlCon(x,obj));
 obj.fitting = false;
 obj.angles = [];

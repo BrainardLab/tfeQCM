@@ -16,7 +16,7 @@ clear; close all
 rng(0);
 
 %% Test case specific parameter choices
-whichTest = 'qcmTwoChannel';
+whichTest = 'qcmFiveChannel';
 switch (whichTest)
     case 'brouwerHeegerBasic'
         % This implements our version of the Brouwer and Heeger model.
@@ -27,11 +27,8 @@ switch (whichTest)
         channelExponent = 2;
         summationExponent = 1;
         startCenter = 0;
-        channelWeightsPos = [1 0.6 0.2];
-        
-        % Ellipse to fit
-        ellipseAngle = 105;         % Angle
-        ellipseAspectRatio = 0.4;   % Minor axis aspect ratio
+        channelWeightsPos = [0.5 0.1 0.2];
+        useInitialParams = false;
 
     case 'kimEtAl'
         % This implements the Kim et al. variant of
@@ -44,10 +41,7 @@ switch (whichTest)
         summationExponent = 1;
         startCenter = 0;
         channelWeightsPos = [1 0.6 0.2 0.4];
-        
-        % Ellipse to fit
-        ellipseAngle = 105;         % Angle
-        ellipseAspectRatio = 0.4;   % Minor axis aspect ratio
+        useInitialParams = false;
 
     case 'qcmTwoChannel'
         % This implements a QCM with L+M and L-M underlying mechanisms.
@@ -58,14 +52,27 @@ switch (whichTest)
         summationExponent = 2;
         startCenter = 45;
         channelWeightsPos = 0.8*[1 1/(0.4.^2)];
-        
-        % Ellipse to fit
-        ellipseAngle = 45;          % Angle
-        ellipseAspectRatio = 0.4;   % Minor axis aspect ratio
+        useInitialParams = false;
+
     case 'qcmFiveChannel'
+        % This implements a QCM with a number of underlying
+        % mechanisms
+        %
+        % Channel properties
+        nChannels = 10;
+        channelExponent = 1;
+        summationExponent = 2;
+        startCenter = 0;
+        channelWeightsPos = [1 0.6 0.2 0.4 0.1];
+        useInitialParams = true;
+
     otherwise
         error('Unknown test case specified');
 end
+
+%% Ellipse to fit
+ellipseAngle = 45;          % Angle
+ellipseAspectRatio = 0.4;   % Minor axis aspect ratio
 
 %% Set up params
 %
@@ -170,7 +177,8 @@ thePacket.kernel = [];
 thePacket.metaData = [];
 
 % Fit the packet
-paramsLCMFit = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar);
+paramsLCMFit = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar,...
+    'maxIter',3000,'maxFunEval',3000);
 fprintf('\nLCM parameters from fit to LCM:\n');
 LCMObj.paramPrint(paramsLCMFit)
 
@@ -209,13 +217,6 @@ xlabel('Cone 1 Contrast');
 ylabel('Cone 2 Contrast');
 title('IsoContrast');
 legend({'LCM', 'LCM Fit', sprintf('LCM Scaled by %g in crit resp',contourScaleFactor)},'Location','NortheastOutside');
-
-%% Compute responses with original and scaled parameters
-% fitResponseStruct = LCMObj.computeResponse(paramsLCM,directionStimulusStruct,[]);
-% fitResponseStructScale = LCMObj.computeResponse(paramsLCMScale,directionStimulusStruct,[]);
-% if (max(abs(fitResponseStruct.values-fitResponseStructScale.values)./fitResponseStruct.values) > 1e-9)
-%     error('Scaling does not preserve response');
-% end
 
 %% Generate an ellipsoidal isoresponse contour
 ellipticalIsoContrast = tfeEllipticalIsoContrast(ellipseAngle,ellipseAspectRatio,LCMObj.angleSupport,LCMObj.criterionResp);
@@ -267,16 +268,21 @@ thePacket.kernel = [];
 thePacket.metaData = [];
 
 % Do the fit.
-[fitToEllipseParams,fVal,fitToEllpiseStructLCM] = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar,'noNakaRushton',false);
-[isoContrastFromEllipseFit] = LCMObj.getIsoContrast(fitToEllipseParams);
-paramsLCMFit = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar);
+if (useInitialParams)
+    [LCMFitToEllipseParams,fVal,fitToEllpiseStructLCM] = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar,'noNakaRushton',false, ...
+        'maxIter',3000,'maxFunEval',3000,'initialParams',paramsLCM);
+else
+    [LCMFitToEllipseParams,fVal,fitToEllpiseStructLCM] = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar,'noNakaRushton',false, ...
+        'maxIter',3000,'maxFunEval',3000); 
+end
+[isoContrastFromLCMEllipseFit] = LCMObj.getIsoContrast(LCMFitToEllipseParams);
 fprintf('\nLCM parameters from fit to ellipse:\n');
-LCMObj.paramPrint(paramsLCMFit)
+LCMObj.paramPrint(LCMFitToEllipseParams)
 
 % Plot
 figure; hold on
 plot(ellipticalIsoContrast.*cosd(angleSupport),ellipticalIsoContrast.*sind(angleSupport),'k','LineWidth',5);
-plot(isoContrastFromEllipseFit.*cosd(angleSupport),isoContrastFromEllipseFit.*sind(angleSupport),'r','LineWidth',3);
+plot(isoContrastFromLCMEllipseFit.*cosd(angleSupport),isoContrastFromLCMEllipseFit.*sind(angleSupport),'r','LineWidth',3);
 axis('square');
 xlim([-2 2]); ylim([-2 2]);
 xlabel('Cone 1 Contrast');

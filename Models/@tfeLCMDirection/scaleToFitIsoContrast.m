@@ -35,7 +35,8 @@ saveCriterionResp = obj.criterionResp;
 
 % fmincon options
 options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display','iter','LargeScale','off');
+options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off');
+options = optimset(options,'MaxFunEval',3000,'MaxIter',3000);
 vlbVec = params.crfOffset;
 vubVec = params.crfAmp+params.crfOffset;
 
