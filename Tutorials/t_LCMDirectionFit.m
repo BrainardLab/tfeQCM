@@ -16,7 +16,7 @@ clear; close all
 rng(0);
 
 %% Test case specific parameter choices
-whichTest = 'qcmFiveChannel';
+whichTest = 'brouwerHeegerBasic';
 switch (whichTest)
     case 'brouwerHeegerBasic'
         % This implements our version of the Brouwer and Heeger model.
