@@ -5,17 +5,26 @@
 %   to ensure that we can get back what we put in.  Etc.
 % 
 %   The parameters used to synthesize the data were just pulled out of a
-%   hat, so there is no particular expected shape the resulting isoresponse
-%   contour.
+%   hat, so there is no particular expected shape the resulting specified
+%   LCM isoresponse contours in Figure 1 and 2.  The models are then fit to
+%   match an ellipse in Figure 3, so there something close to an ellipse is
+%   expected.
+%
+%   There are some local minimum issues with the fitting parameter search
+%   in some cases.  The default example parameters are set so these are
+%   avoided, but you may hit them if you play around.
 
 % History:
 %   03/01/21  dhb       Wrote from QCM test version.
+%   04/04/21  dhb       Lots of changes.
 
 %% Initialize
 clear; close all
 rng(0);
 
 %% Test case specific parameter choices
+%
+% See switch statement below for options and explanations.
 whichTest = 'brouwerHeegerBasic';
 switch (whichTest)
     case 'brouwerHeegerBasic'
@@ -33,11 +42,11 @@ switch (whichTest)
     case 'kimEtAl'
         % This implements the Kim et al. variant of
         % the Brouwer and Heeger model.
-        % Eight channels with cos^4sensitivity, linear combination.
+        % Eight channels with cos^4 sensitivity, linear combination.
         %
         % Channel properties
         nChannels = 8;
-        channelExponent = 4;
+        channelExponent = 6;
         summationExponent = 1;
         startCenter = 0;
         channelWeightsPos = [1 0.6 0.2 0.4];
