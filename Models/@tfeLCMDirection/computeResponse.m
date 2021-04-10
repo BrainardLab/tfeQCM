@@ -117,7 +117,10 @@ else
     theResponse = theResponse2;
 end
 
-%% Push the LCM linear response through a Naka-Rushton non-linearity
+%% Take the summed response and raise to 1/summationExponent
+theResponse = theResponse.^(1/obj.summationExponent);
+
+%% Push the LCM response through a Naka-Rushton non-linearity
 %
 % Only do this if NR parameters are there.  Otherwise return equivalent
 % contrasts.
