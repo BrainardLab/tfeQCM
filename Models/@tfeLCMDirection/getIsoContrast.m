@@ -74,7 +74,8 @@ criterionEquivContrastCell = tfeNRInvert(params,{obj.criterionResp});
 criterionEquivContrast = criterionEquivContrastCell{1};
 
 exponentiatedContrast = criterionEquivContrast./unitEquivContrastResponse;
-isoContrast = exponentiatedContrast.^(1/obj.summationExponent);
+%isoContrast = exponentiatedContrast.^(1/obj.summationExponent);
+isoContrast = exponentiatedContrast;
 
 % Get isocontrast around unit circle to produce criterion response.
 %isoContrast = obj.criterionResp./(criterionEquivContrast.^(1/obj.summationExponent));
