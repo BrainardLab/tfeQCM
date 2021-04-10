@@ -21,6 +21,8 @@
 % History:
 %   03/01/21  dhb       Wrote from QCM test version.
 %   04/04/21  dhb       Lots of changes.
+%   04/10/21  dhb       Illustrate regression scaling of isocontrast
+%                       contours.
 
 %% Initialize
 clear; close all
@@ -205,18 +207,23 @@ if (max(abs(fitLCMResponseStruct.values-LCMResponseStruct.values)/max(LCMRespons
 end
 isoContrastLCMFit = LCMObj.getIsoContrast(paramsLCMFit);
 
-%% Scale isocontrast contour by a specified amount.
+%% Scale isocontrast contour.
 %
-% The amount is the change in criterion response, so with
-% the Naka-Rushton it will not in general be the factor by
-% which the contour itself grows or shrinks.
+% By changing the crition response in the LCM object, we can
+% get an iso response contour of a different scale.  Be
+% sure not to make the criterion response larger than
+% the maximum response in the Naka-Rushton.  Also note
+% that becaues the Naka-Rushton is non-linear, the scaling
+% of the isoresponse contour will not match the change in
+% criterion response.
 %
-% You probably wouldn't do this, but understanding the idea
-% is the basis of the code that scales an LCM isocontrast
-% contour to fit another one for plotting.
-contourScaleFactor = 0.25;
+% You probably wouldn't do this for a practical purpose, but
+% it's not bad to understand the the ideas.  See below for a 
+% regression method for scaling one isocontrast contour to another
+% for plotting purposes.
+critResponseScaleFactor = 0.5;
 saveCriterionResp = LCMObj.criterionResp;
-LCMObj.criterionResp = 0.5*LCMObj.criterionResp;
+LCMObj.criterionResp = critResponseScaleFactor*LCMObj.criterionResp;
 [isoContrastScale] = LCMObj.getIsoContrast(paramsLCM);
 LCMObj.criterionResp = saveCriterionResp;
 
@@ -230,25 +237,20 @@ xlim([-2 2]); ylim([-2 2]);
 xlabel('Cone 1 Contrast');
 ylabel('Cone 2 Contrast');
 title('IsoContrast');
-legend({'LCM', 'LCM Fit', sprintf('LCM Scaled by %g in crit resp',contourScaleFactor)},'Location','NortheastOutside');
+legend({'LCM', 'LCM Fit', sprintf('LCM Scaled by %g in crit resp',critResponseScaleFactor)},'Location','NortheastOutside');
 
 %% Generate an ellipsoidal isoresponse contour
 ellipticalIsoContrast = tfeEllipticalIsoContrast(ellipseAngle,ellipseAspectRatio,LCMObj.angleSupport,LCMObj.criterionResp);
 
-%% Get parameters with model parameters scaled to produce best fit to elliptical contour
+%% Scale an isoresponse contour to fit another one.
 %
-% This shows how to scale an isoresponse contour, but doesn't try to adjust
-% relative channel weights to best fit the ellipse.  This method is a bit
-% brittle, in that you have to make sure to choose a criterion response
-% that is within the range of the Naka-Rushton function.  Another approach
-% is simply to use regression to scale the contour, which is fine for
-% plotting but which steps outside of hte modeling framework a little, in
-% that you don't know what response is produced by the scaled contour.
-newCriterionResp = LCMObj.scaleToFitIsoContrast(paramsLCM,ellipticalIsoContrast);
-saveCriterionResp = LCMObj.criterionResp;
-LCMObj.criterionResp = newCriterionResp;
-scaledToEllipseIsoContrast = LCMObj.getIsoContrast(paramsLCM);
-LCMObj.criterionResp = saveCriterionResp;
+% This method doesn't adjust or affect the model, it just shows how
+% you can use regression to adjust size of one isocontrast to fit
+% another, for plotting purposes.  Allows us to compare shapes in
+% cases where different models normalize their basic isocontrast
+% contours differently.
+scaleFactor = (isoContrastLCM')\(ellipticalIsoContrast');
+scaledToEllipseIsoContrast = scaleFactor*isoContrastLCMFit; 
 
 % Plot
 figure; hold on
@@ -275,7 +277,12 @@ fitStimulusStruct.values(1,:) = [cosd(LCMObj.angleSupport) cosd(LCMObj.angleSupp
 fitStimulusStruct.values(2,:) = [sind(LCMObj.angleSupport) sind(LCMObj.angleSupport) sind(LCMObj.angleSupport)];
 fitStimulusStruct.values(3,:) = [ellipticalIsoContrast 0.5*ellipticalIsoContrast 2*ellipticalIsoContrast];
 
-% Want to produce criterion response for those stimuli
+% Want to produce criterion response the ellipticalIsoContrast stimuli, and
+% scaled versions for the scale versions of that.  We make sure some of the
+% responses exceed LCMObj.criterionResp so that the fit Rmax of the
+% Naka-Rushton exceeds the criterion response.  That avoids problems when
+% we get the isoresponse contour corresponding to the criterion response
+% below.
 fitResponseStruct.timebase = 1:3*length(LCMObj.angleSupport);
 fitResponseStruct.values = [LCMObj.criterionResp*ones(size(LCMObj.angleSupport)) ...
     0.25*LCMObj.criterionResp*ones(size(LCMObj.angleSupport)) ...
@@ -288,8 +295,10 @@ thePacket.kernel = [];
 thePacket.metaData = [];
 
 % Do the fit.
-    [LCMFitToEllipseParams,fVal,fitToEllpiseStructLCM] = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar,'noNakaRushton',false, ...
+[LCMFitToEllipseParams,fVal,fitToEllpiseStructLCM] = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar,'noNakaRushton',false, ...
         'maxIter',maxIter,'maxFunEval',maxIter); 
+    
+% Get isoresponse contour corresponding to fit parameters.
 [isoContrastFromLCMEllipseFit] = LCMObj.getIsoContrast(LCMFitToEllipseParams);
 fprintf('\nLCM parameters from fit to ellipse:\n');
 LCMObj.paramPrint(LCMFitToEllipseParams)

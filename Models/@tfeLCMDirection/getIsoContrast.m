@@ -2,7 +2,11 @@ function [isoContrast,unitEquivContrastResponse,angleSupport] = getIsoContrast(o
 % [isoResponse,unitResponse,angleSupport] = getIsoContrast(obj,params,varargin)
 %
 % Synopsis:
-%   Get isoresponse contour for the LCM (linear channel model).
+%   Get isoresponse contour for the LCM (linear channel model). The
+%   returned contour should produce the criterion response specified in
+%   obj.criterionResp. You'll get an error if this is larger than the range
+%   available in the Naka-Rushton function specified in the parameter
+%   structure.
 %
 % Inputs:
 %   obj        - the tfeLCMDirection object
