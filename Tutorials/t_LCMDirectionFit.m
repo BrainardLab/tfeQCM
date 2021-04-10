@@ -25,7 +25,7 @@ rng(0);
 %% Test case specific parameter choices
 %
 % See switch statement below for options and explanations.
-whichTest = 'brouwerHeegerBasic';
+whichTest = 'kimEtAl';
 switch (whichTest)
     case 'brouwerHeegerBasic'
         % This implements our version of the Brouwer and Heeger model.
@@ -261,14 +261,16 @@ legend({'Ellipse', 'LCM' 'LCM Scaled To Fit'},'Location','NortheastOutside');
 % linear response, since what we care about here is the shape. 
 %
 % Set up structure describing stimuli around the circle
-fitStimulusStruct.timebase = 1:length(LCMObj.angleSupport);
-fitStimulusStruct.values(1,:) = cosd(LCMObj.angleSupport);
-fitStimulusStruct.values(2,:) = sind(LCMObj.angleSupport);
-fitStimulusStruct.values(3,:) = ellipticalIsoContrast;
+fitStimulusStruct.timebase = 1:3*length(LCMObj.angleSupport);
+fitStimulusStruct.values(1,:) = [cosd(LCMObj.angleSupport) cosd(LCMObj.angleSupport) cosd(LCMObj.angleSupport)];
+fitStimulusStruct.values(2,:) = [sind(LCMObj.angleSupport) sind(LCMObj.angleSupport) sind(LCMObj.angleSupport)];
+fitStimulusStruct.values(3,:) = [ellipticalIsoContrast 0.5*ellipticalIsoContrast 2*ellipticalIsoContrast];
 
 % Want to produce criterion response for those stimuli
-fitResponseStruct.timebase = fitStimulusStruct.timebase;
-fitResponseStruct.values = LCMObj.criterionResp*ones(size(fitResponseStruct.timebase));
+fitResponseStruct.timebase = 1:3*length(LCMObj.angleSupport);
+fitResponseStruct.values = [LCMObj.criterionResp*ones(size(LCMObj.angleSupport)) ...
+    0.25*LCMObj.criterionResp*ones(size(LCMObj.angleSupport)) ...
+    1.5*LCMObj.criterionResp*ones(size(LCMObj.angleSupport))];
 
 % Construct the packet for the fit
 thePacket.stimulus = fitStimulusStruct;
