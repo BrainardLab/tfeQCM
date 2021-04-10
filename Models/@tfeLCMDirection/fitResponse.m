@@ -50,6 +50,7 @@ function [paramsFit,fVal,modelResponseStruct] = fitResponse(obj,thePacket,vararg
 %    03/01/21  dhb  Wrote from QCM version.
 %    04/03/21  dhb  New normalization, and enforce positivity on responses
 %                   around angle.
+%    04/10/21  dhb  Multiple starting points to avoid local minima better.
 
 %% Parse vargin for options passed here
 %
@@ -67,13 +68,13 @@ p.addParameter('fminconAlgorithm','interior-point',@(x) (isempty(x) | ischar(x))
 p.parse(thePacket,varargin{:});
 
 %% Initial parameters
-[initialParams,vlbParams,vubParams] = obj.defaultParams;
+[initialParams0,vlbParams,vubParams] = obj.defaultParams;
 if (~isempty(p.Results.initialParams))
-    initialParams = p.Results.initialParams;
+    initialParams0 = p.Results.initialParams;
 end
 
 % Normalize the initial parameters to norm to 1
-initialVec = obj.paramsToVec(initialParams);
+initialVec = obj.paramsToVec(initialParams0);
 initialVec(1:obj.nChannels/2) = initialVec(obj.nChannels/2)/norm(initialVec(1:obj.nChannels/2));
 initialParams = obj.vecToParams(initialVec);
 
@@ -115,6 +116,34 @@ obj.fitting = true; obj.angles = [];
     'nlcon',@(x)fitNlCon(x,obj));
 obj.fitting = false;
 obj.angles = [];
+
+% Fit with some different initial parameters
+for ii = 1:obj.nChannels/2
+    % Zero out all but one weight
+    initialVec = obj.paramsToVec(initialParams0);
+    initialVec(setdiff(1:obj.nChannels/2,ii)) = 0;
+    initialVec(1:obj.nChannels/2) = initialVec(obj.nChannels/2)/norm(initialVec(1:obj.nChannels/2));
+    initialParams = obj.vecToParams(initialVec);
+    
+    % Fit
+    obj.fitting = true; obj.angles = [];
+    [paramsFit2,fVal2,modelResponseStruct2] = fitResponse@tfe(obj,thePacket,...
+        'initialParams',initialParams,'vlbParams',vlbParams,'vubParams',vubParams,...
+        'fitErrorScalar',p.Results.fitErrorScalar,...
+        'noNakaRushton',p.Results.noNakaRushton, ...
+        'MaxIter',p.Results.maxIter, ...
+        'MaxFunEval',p.Results.maxFunEval, ...
+        'nlcon',@(x)fitNlCon(x,obj));
+    obj.fitting = false;
+    obj.angles = [];
+    
+    % Check and keep best so far
+    if (fVal2 < fVal1)
+        paramsFit1 = paramsFit2;
+        fVal1 = fVal2;
+        modelResponseStruct1 = modelResponseStruct2;
+    end
+end
 
 % Set return
 paramsFit = paramsFit1;

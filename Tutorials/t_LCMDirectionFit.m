@@ -12,7 +12,11 @@
 %
 %   There are some local minimum issues with the fitting parameter search
 %   in some cases.  The default example parameters are set so these are
-%   avoided, but you may hit them if you play around.
+%   avoided in both 2019a and 2021a, and the search starts at multiple
+%   points as an additional attempt to avoid this issue.  But if you play
+%   around with parameters you may find the search gets stuck which will
+%   cause some error checks to throw.
+%
 
 % History:
 %   03/01/21  dhb       Wrote from QCM test version.
@@ -25,7 +29,7 @@ rng(0);
 %% Test case specific parameter choices
 %
 % See switch statement below for options and explanations.
-whichTest = 'kimEtAl';
+whichTest = 'qcmFiveChannel';
 switch (whichTest)
     case 'brouwerHeegerBasic'
         % This implements our version of the Brouwer and Heeger model.
@@ -37,7 +41,6 @@ switch (whichTest)
         summationExponent = 1;
         startCenter = 0;
         channelWeightsPos = [0.5 0.1 0.2];
-        useInitialParams = false;
 
     case 'kimEtAl'
         % This implements the Kim et al. variant of
@@ -50,7 +53,6 @@ switch (whichTest)
         summationExponent = 1;
         startCenter = 0;
         channelWeightsPos = [1 0.6 0.2 0.4];
-        useInitialParams = false;
 
     case 'qcmTwoChannel'
         % This implements a QCM with L+M and L-M underlying mechanisms.
@@ -61,11 +63,14 @@ switch (whichTest)
         summationExponent = 2;
         startCenter = 45;
         channelWeightsPos = 0.8*[1 1/(0.4.^2)];
-        useInitialParams = false;
 
     case 'qcmFiveChannel'
-        % This implements a QCM with a number of underlying
-        % mechanisms
+        % This implements a QCM with five of underlying
+        % mechanisms. Note that the simulated data underdetermine
+        % this model, so that although the fit to the simulated data
+        % reproduce the fit responses, they don't recover the parameters we
+        % put in.  An example of how things can be ambiguous in this
+        % general space.
         %
         % Channel properties
         nChannels = 10;
@@ -73,7 +78,6 @@ switch (whichTest)
         summationExponent = 2;
         startCenter = 0;
         channelWeightsPos = [1 0.6 0.2 0.4 0.1];
-        useInitialParams = true;
 
     otherwise
         error('Unknown test case specified');
@@ -103,6 +107,7 @@ end
 % Fit error scalar.  Big value seems
 % to work better here.
 fitErrorScalar = 10000;
+maxIter = 1000;
 
 % Follow normalization convention with channel weights.
 channelWeightsPos = channelWeightsPos/norm(channelWeightsPos);
@@ -187,7 +192,7 @@ thePacket.metaData = [];
 
 % Fit the packet
 paramsLCMFit = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar,...
-    'maxIter',3000,'maxFunEval',3000);
+    'maxIter',maxIter,'maxFunEval',maxIter);
 fprintf('\nLCM parameters from fit to LCM:\n');
 LCMObj.paramPrint(paramsLCMFit)
 
@@ -233,7 +238,12 @@ ellipticalIsoContrast = tfeEllipticalIsoContrast(ellipseAngle,ellipseAspectRatio
 %% Get parameters with model parameters scaled to produce best fit to elliptical contour
 %
 % This shows how to scale an isoresponse contour, but doesn't try to adjust
-% relative channel weights to best fit the ellipse.
+% relative channel weights to best fit the ellipse.  This method is a bit
+% brittle, in that you have to make sure to choose a criterion response
+% that is within the range of the Naka-Rushton function.  Another approach
+% is simply to use regression to scale the contour, which is fine for
+% plotting but which steps outside of hte modeling framework a little, in
+% that you don't know what response is produced by the scaled contour.
 newCriterionResp = LCMObj.scaleToFitIsoContrast(paramsLCM,ellipticalIsoContrast);
 saveCriterionResp = LCMObj.criterionResp;
 LCMObj.criterionResp = newCriterionResp;
@@ -257,10 +267,9 @@ legend({'Ellipse', 'LCM' 'LCM Scaled To Fit'},'Location','NortheastOutside');
 % This actually tries to fit the ellipse isoresopnse contour,
 % by fitting data that correspond to the iso response contrasts.
 %
-% Note use of 'noNakeRushton' flag so that we just work with the
-% linear response, since what we care about here is the shape. 
-%
-% Set up structure describing stimuli around the circle
+% Set up structure describing stimuli around the circle.  We generate
+% responses for several different contrasts so that we actually constrain
+% the model.
 fitStimulusStruct.timebase = 1:3*length(LCMObj.angleSupport);
 fitStimulusStruct.values(1,:) = [cosd(LCMObj.angleSupport) cosd(LCMObj.angleSupport) cosd(LCMObj.angleSupport)];
 fitStimulusStruct.values(2,:) = [sind(LCMObj.angleSupport) sind(LCMObj.angleSupport) sind(LCMObj.angleSupport)];
@@ -279,13 +288,8 @@ thePacket.kernel = [];
 thePacket.metaData = [];
 
 % Do the fit.
-if (useInitialParams)
     [LCMFitToEllipseParams,fVal,fitToEllpiseStructLCM] = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar,'noNakaRushton',false, ...
-        'maxIter',3000,'maxFunEval',3000,'initialParams',paramsLCM);
-else
-    [LCMFitToEllipseParams,fVal,fitToEllpiseStructLCM] = LCMObj.fitResponse(thePacket,'fitErrorScalar',fitErrorScalar,'noNakaRushton',false, ...
-        'maxIter',3000,'maxFunEval',3000); 
-end
+        'maxIter',maxIter,'maxFunEval',maxIter); 
 [isoContrastFromLCMEllipseFit] = LCMObj.getIsoContrast(LCMFitToEllipseParams);
 fprintf('\nLCM parameters from fit to ellipse:\n');
 LCMObj.paramPrint(LCMFitToEllipseParams)
