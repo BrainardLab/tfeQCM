@@ -72,9 +72,9 @@ if (~isempty(p.Results.initialParams))
     initialParams = p.Results.initialParams;
 end
 
-% Normalize the initial parameters to sum to 1
+% Normalize the initial parameters to norm to 1
 initialVec = obj.paramsToVec(initialParams);
-initialVec(1:obj.nChannels/2) = initialVec(obj.nChannels/2)/sum(initialVec(obj.nChannels/2));
+initialVec(1:obj.nChannels/2) = initialVec(obj.nChannels/2)/norm(initialVec(1:obj.nChannels/2));
 initialParams = obj.vecToParams(initialVec);
 
 %% Locked Naka-Rushton parameters
